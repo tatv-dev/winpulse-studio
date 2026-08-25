@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Count Tool - Công cụ đếm và thống kê năng suất làm việc" />
+  <title>Count Tool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <!-- Custom title bar -->
+  <div class="titlebar" id="titlebar">
+    <div class="titlebar-left">
+      <div class="app-logo">
+        <i data-lucide="activity" class="icon-sm text-primary"></i>
+      </div>
+      <span class="app-title">Count Tool</span>
+      <span class="app-version">v1.0</span>
+    </div>
+    <div class="titlebar-controls">
+      <button class="tb-btn" id="btn-minimize" title="Thu nhỏ">
+        <i data-lucide="minus" class="icon-xs"></i>
+      </button>
+      <button class="tb-btn" id="btn-maximize" title="Phóng to">
+        <i data-lucide="square" class="icon-xs"></i>
+      </button>
+      <button class="tb-btn tb-close" id="btn-close" title="Đóng (ẩn vào khay)">
+        <i data-lucide="x" class="icon-xs"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <nav class="nav-menu">
+      <button class="nav-item active" data-page="dashboard" title="Tổng quan">
+        <span class="nav-icon"><i data-lucide="layout-dashboard" class="icon-md"></i></span>
+        <span class="nav-label">Tổng quan</span>
+      </button>
+      <button class="nav-item" data-page="clipboard" title="Copy / Paste">
+        <span class="nav-icon"><i data-lucide="clipboard-paste" class="icon-md"></i></span>
+        <span class="nav-label">Copy / Paste</span>
+      </button>
+      <button class="nav-item" data-page="history" title="Lịch sử">
+        <span class="nav-icon"><i data-lucide="history" class="icon-md"></i></span>
+        <span class="nav-label">Lịch sử</span>
+      </button>
+      <button class="nav-item" data-page="settings" title="Cài đặt">
+        <span class="nav-icon"><i data-lucide="settings" class="icon-md"></i></span>
+        <span class="nav-label">Cài đặt</span>
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="live-indicator">
+        <span class="dot pulse"></span>
+        <span>Đang theo dõi trực tiếp</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="content">
+
+    <!-- ── Page: Dashboard ── -->
+    <section class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Tổng quan hôm nay</h1>
+          <p class="page-subtitle" id="dash-date">Đang tải...</p>
+        </div>
+        <button class="btn btn-outline" id="btn-reset-today" title="Reset số liệu hôm nay">
+          <i data-lucide="rotate-ccw" class="icon-sm"></i>
+          <span>Đặt lại hôm nay</span>
+        </button>
+      </div>
+
+      <!-- Stat cards -->
+      <div class="stat-grid">
+        <div class="stat-card card-copy" id="card-copy">
+          <div class="stat-card-header">
+            <div class="stat-card-badge copy-badge">
+              <i data-lucide="copy" class="icon-sm"></i>
+            </div>
+            <span class="stat-card-tag">COPY</span>
+          </div>
+          <div class="stat-card-body">
+            <div class="stat-value" id="today-copy">0</div>
+            <div class="stat-label">Số lần Copy</div>
+            <div class="stat-sub" id="last-copy-time">Chưa có</div>
+          </div>
+        </div>
+
+        <div class="stat-card card-paste" id="card-paste">
+          <div class="stat-card-header">
+            <div class="stat-card-badge paste-badge">
+              <i data-lucide="clipboard-check" class="icon-sm"></i>
+            </div>
+            <span class="stat-card-tag">PASTE</span>
+          </div>
+          <div class="stat-card-body">
+            <div class="stat-value" id="today-paste">0</div>
+            <div class="stat-label">Số lần Paste</div>
+            <div class="stat-sub" id="last-paste-time">Chưa có</div>
+          </div>
+        </div>
+
+        <div class="stat-card card-total">
+          <div class="stat-card-header">
+            <div class="stat-card-badge total-badge">
+              <i data-lucide="zap" class="icon-sm"></i>
+            </div>
+            <span class="stat-card-tag">TỔNG</span>
+          </div>
+          <div class="stat-card-body">
+            <div class="stat-value" id="today-total">0</div>
+            <div class="stat-label">Tổng thao tác</div>
+            <div class="stat-sub" id="copy-paste-ratio">Copy/Paste: —</div>
+          </div>
+        </div>
+
+        <div class="stat-card card-alltime">
+          <div class="stat-card-header">
+            <div class="stat-card-badge alltime-badge">
+              <i data-lucide="award" class="icon-sm"></i>
+            </div>
+            <span class="stat-card-tag">TÍCH LŨY</span>
+          </div>
+          <div class="stat-card-body">
+            <div class="stat-value" id="alltime-total">0</div>
+            <div class="stat-label">Tổng tất cả</div>
+            <div class="stat-sub" id="alltime-breakdown">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7-day bar chart -->
+      <div class="chart-section">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <i data-lucide="bar-chart-2" class="icon-sm text-secondary"></i>
+            <h2 class="section-title">Thống kê 7 ngày gần nhất</h2>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item">
+              <span class="legend-dot copy-dot"></span>
+              <span>Copy</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot paste-dot"></span>
+              <span>Paste</span>
+            </div>
+          </div>
+        </div>
+        <div class="bar-chart" id="bar-chart">
+          <!-- Bars injected by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Page: Clipboard ── -->
+    <section class="page" id="page-clipboard">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Bộ đếm Clipboard</h1>
+          <p class="page-subtitle">Theo dõi tương tác clipboard theo thời gian thực</p>
+        </div>
+      </div>
+
+      <div class="clipboard-center">
+        <div class="big-counter-grid">
+          <div class="big-counter copy-counter">
+            <div class="bc-header">
+              <span class="bc-badge copy-badge">
+                <i data-lucide="copy" class="icon-md"></i>
+              </span>
+              <span class="bc-tag">COPY</span>
+            </div>
+            <div class="bc-num" id="clip-copy">0</div>
+            <div class="bc-label">LƯỢT SAO CHÉP</div>
+            <div class="bc-hint">Tự động phát hiện thay đổi clipboard (Ctrl+C)</div>
+          </div>
+
+          <div class="big-divider">
+            <div class="vs-badge">
+              <i data-lucide="arrow-left-right" class="icon-xs"></i>
+            </div>
+          </div>
+
+          <div class="big-counter paste-counter">
+            <div class="bc-header">
+              <span class="bc-badge paste-badge">
+                <i data-lucide="clipboard-check" class="icon-md"></i>
+              </span>
+              <span class="bc-tag">PASTE</span>
+            </div>
+            <div class="bc-num" id="clip-paste">0</div>
+            <div class="bc-label">LƯỢT DÁN</div>
+            <div class="bc-hint">Tự động phát hiện phím tắt Ctrl+V</div>
+          </div>
+        </div>
+
+        <div class="progress-section">
+          <div class="progress-header">
+            <span class="progress-title">Tỷ lệ tương quan</span>
+            <span class="progress-value" id="progress-pct">50% / 50%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill-copy" id="progress-copy" style="width:50%"></div>
+            <div class="progress-fill-paste" id="progress-paste" style="width:50%"></div>
+          </div>
+          <div class="progress-labels">
+            <span class="text-copy-color font-medium">Copy</span>
+            <span class="text-paste-color font-medium">Paste</span>
+          </div>
+        </div>
+
+        <div class="clipboard-tip">
+          <i data-lucide="info" class="icon-md tip-icon"></i>
+          <div>
+            Hệ thống tự động ghi nhận khi clipboard cập nhật nội dung mới (+1 Copy) và khi phím tắt dán nội dung được kích hoạt (+1 Paste).
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Page: History ── -->
+    <section class="page" id="page-history">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Nhật ký hoạt động</h1>
+          <p class="page-subtitle">Bảng dữ liệu chi tiết 7 ngày vừa qua</p>
+        </div>
+      </div>
+
+      <div class="history-table-wrap">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Thời gian</th>
+              <th>Lượt Copy</th>
+              <th>Lượt Paste</th>
+              <th>Tổng cộng</th>
+              <th>Tỷ lệ phân bổ</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody">
+            <tr><td colspan="5" class="loading-cell">Đang tải dữ liệu...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── Page: Settings ── -->
+    <section class="page" id="page-settings">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Cài đặt ứng dụng</h1>
+          <p class="page-subtitle">Quản lý tùy chọn và dữ liệu cục bộ</p>
+        </div>
+      </div>
+
+      <div class="settings-list">
+        <div class="setting-card">
+          <div class="setting-info">
+            <div class="setting-icon-box">
+              <i data-lucide="folder-open" class="icon-md"></i>
+            </div>
+            <div>
+              <div class="setting-name">Thư mục lưu trữ dữ liệu</div>
+              <div class="setting-desc" id="data-path-label">Đang tải...</div>
+            </div>
+          </div>
+          <button class="btn btn-outline" id="btn-open-data">
+            <i data-lucide="external-link" class="icon-sm"></i>
+            <span>Xem thư mục</span>
+          </button>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-info">
+            <div class="setting-icon-box">
+              <i data-lucide="sun" class="icon-md"></i>
+            </div>
+            <div>
+              <div class="setting-name">Giao diện</div>
+              <div class="setting-desc">Chế độ sáng tiêu chuẩn (Light Mode)</div>
+            </div>
+          </div>
+          <div class="badge badge-primary">Mặc định</div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-info">
+            <div class="setting-icon-box">
+              <i data-lucide="bell" class="icon-md"></i>
+            </div>
+            <div>
+              <div class="setting-name">Khay hệ thống (System Tray)</div>
+              <div class="setting-desc">Tự động thu nhỏ về khay hệ thống khi đóng cửa sổ</div>
+            </div>
+          </div>
+          <div class="badge badge-success">Đang bật</div>
+        </div>
+
+        <div class="setting-card danger-card">
+          <div class="setting-info">
+            <div class="setting-icon-box danger-icon-box">
+              <i data-lucide="power" class="icon-md"></i>
+            </div>
+            <div>
+              <div class="setting-name">Đóng ứng dụng</div>
+              <div class="setting-desc">Dừng tiến trình giám sát và thoát hoàn toàn</div>
+            </div>
+          </div>
+          <button class="btn btn-danger" id="btn-quit">
+            <i data-lucide="log-out" class="icon-sm"></i>
+            <span>Thoát</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="about-card">
+        <div class="about-logo-box">
+          <i data-lucide="shield-check" class="icon-lg"></i>
+        </div>
+        <div class="about-text">
+          <div class="about-name">Count Tool · Clean Productivity</div>
+          <div class="about-ver">Phiên bản 1.0.0 · Thiết kế Light & Minimal</div>
+          <div class="about-desc">Công cụ đo lường và theo dõi thao tác năng suất máy tính, bảo mật và chạy cục bộ 100%.</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
