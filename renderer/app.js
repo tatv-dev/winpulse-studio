@@ -13,6 +13,7 @@ let trendChartInstance = null;
 let distributionChartInstance = null;
 let mouseBarChartInstance = null;
 let isAutoClickRunning = false;
+let currentAutoClickKey = localStorage.getItem('winpulse_ac_hotkey') || 'F6';
 
 // ─── Localization Engine ──────────────────────────────────────────────────────
 function t(key) {
@@ -33,6 +34,14 @@ function setLanguage(lang) {
     }
   });
 
+  // Update input placeholders with data-i18n-placeholder
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.dataset.i18nPlaceholder;
+    if (key && translations[currentLang][key]) {
+      el.placeholder = translations[currentLang][key];
+    }
+  });
+
   // Update button active state
   document.getElementById('btn-lang-vi')?.classList.toggle('active', lang === 'vi');
   document.getElementById('btn-lang-en')?.classList.toggle('active', lang === 'en');
@@ -47,6 +56,12 @@ function setLanguage(lang) {
     renderAll(statsCache);
   }
 }
+
+// ─── Initialization on Start ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  setLanguage(currentLang);
+});
+setLanguage(currentLang);
 
 // ─── Initialize Lucide Icons ───────────────────────────────────────────────────
 function refreshIcons() {
@@ -199,6 +214,18 @@ function updateAutoClickUI(running, count = 0) {
   const btnText = document.getElementById('ac-btn-text');
   const btnIcon = document.getElementById('ac-btn-icon');
   const countDisplay = document.getElementById('ac-count-display');
+  const hotkeyHint = document.querySelector('[data-i18n="ac_hotkey_hint"]');
+  const currentBadge = document.getElementById('current-hotkey-badge');
+
+  if (currentBadge) currentBadge.textContent = currentAutoClickKey;
+  if (hotkeyHint) {
+    hotkeyHint.textContent = t('ac_hotkey_hint').replace('{key}', currentAutoClickKey);
+  }
+
+  // Update quick hotkey buttons active state
+  document.querySelectorAll('.hotkey-quick-btn').forEach(qb => {
+    qb.classList.toggle('active', qb.dataset.key === currentAutoClickKey);
+  });
 
   if (countDisplay) {
     countDisplay.textContent = count.toLocaleString();
@@ -210,7 +237,7 @@ function updateAutoClickUI(running, count = 0) {
     if (btn) {
       btn.className = 'btn btn-danger btn-lg';
     }
-    if (btnText) btnText.textContent = t('ac_btn_stop');
+    if (btnText) btnText.textContent = t('ac_btn_stop').replace('{key}', currentAutoClickKey);
     if (btnIcon) btnIcon.setAttribute('data-lucide', 'square');
   } else {
     if (statusText) statusText.textContent = t('ac_status_stopped');
@@ -218,18 +245,107 @@ function updateAutoClickUI(running, count = 0) {
     if (btn) {
       btn.className = 'btn btn-primary btn-lg';
     }
-    if (btnText) btnText.textContent = t('ac_btn_start');
+    if (btnText) btnText.textContent = t('ac_btn_start').replace('{key}', currentAutoClickKey);
     if (btnIcon) btnIcon.setAttribute('data-lucide', 'play');
   }
   refreshIcons();
 }
+
+// ─── Hotkey Configuration Handler ───────────────────────────────────────────
+async function applyAutoClickHotkey(key) {
+  if (!key) return;
+  const msgEl = document.getElementById('hotkey-status-msg');
+  const res = await window.api.setAutoClickHotkey(key);
+  if (res && res.success) {
+    currentAutoClickKey = res.hotkey;
+    localStorage.setItem('winpulse_ac_hotkey', currentAutoClickKey);
+    if (msgEl) {
+      msgEl.textContent = t('hotkey_saved_success');
+      msgEl.className = 'hotkey-status-msg success';
+      setTimeout(() => { if (msgEl) msgEl.textContent = ''; }, 3000);
+    }
+    updateAutoClickUI(isAutoClickRunning);
+  } else {
+    if (msgEl) {
+      msgEl.textContent = (res && res.error) || 'Không thể đăng ký phím tắt';
+      msgEl.className = 'hotkey-status-msg error';
+    }
+  }
+}
+
+// Quick hotkey buttons click
+document.querySelectorAll('.hotkey-quick-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const key = btn.dataset.key;
+    applyAutoClickHotkey(key);
+  });
+});
+
+// Custom hotkey recorder input
+const customHotkeyInput = document.getElementById('custom-hotkey-input');
+const btnSaveHotkey = document.getElementById('btn-save-hotkey');
+
+if (customHotkeyInput) {
+  customHotkeyInput.addEventListener('focus', () => {
+    customHotkeyInput.classList.add('recording');
+    customHotkeyInput.value = t('hotkey_press_key_hint');
+  });
+
+  customHotkeyInput.addEventListener('blur', () => {
+    customHotkeyInput.classList.remove('recording');
+    if (customHotkeyInput.value === t('hotkey_press_key_hint')) {
+      customHotkeyInput.value = '';
+    }
+  });
+
+  customHotkeyInput.addEventListener('keydown', (e) => {
+    e.preventDefault();
+    let key = e.key;
+
+    // Ignore pure modifier keys
+    if (['Control', 'Shift', 'Alt', 'Meta'].includes(key)) return;
+
+    if (key.startsWith('Arrow')) key = key.replace('Arrow', '');
+    if (key.length === 1) key = key.toUpperCase();
+
+    const parts = [];
+    if (e.ctrlKey) parts.push('CommandOrControl');
+    if (e.altKey) parts.push('Alt');
+    if (e.shiftKey) parts.push('Shift');
+    parts.push(key);
+
+    const shortcutStr = parts.join('+');
+    customHotkeyInput.value = shortcutStr;
+  });
+}
+
+btnSaveHotkey?.addEventListener('click', () => {
+  const val = customHotkeyInput?.value?.trim();
+  if (val && val !== t('hotkey_press_key_hint')) {
+    applyAutoClickHotkey(val);
+  }
+});
+
+// Load saved hotkey on startup
+(async function initHotkey() {
+  const saved = localStorage.getItem('winpulse_ac_hotkey');
+  if (saved) {
+    await applyAutoClickHotkey(saved);
+  } else {
+    const current = await window.api.getAutoClickHotkey();
+    if (current) {
+      currentAutoClickKey = current;
+      updateAutoClickUI(false);
+    }
+  }
+})();
 
 // Receive Auto Clicker status updates from main process
 window.api.onAutoClickStatus(data => {
   updateAutoClickUI(data.running, data.count || 0);
 });
 
-// Global hotkey F6 triggered
+// Global hotkey triggered
 window.api.onTriggerAutoClickToggle(() => {
   toggleAutoClick();
 });

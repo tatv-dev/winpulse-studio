@@ -51,13 +51,13 @@
   <!-- Sidebar: 4 mục khoa học -->
   <aside class="sidebar">
     <nav class="nav-menu">
-      <button class="nav-item active" data-page="dashboard" title="Tổng quan">
+      <button class="nav-item active" data-page="dashboard" title="Dashboard">
         <span class="nav-icon"><i data-lucide="layout-dashboard" class="icon-md"></i></span>
-        <span class="nav-label" data-i18n="nav_dashboard">Tổng quan</span>
+        <span class="nav-label" data-i18n="nav_dashboard">Dashboard</span>
       </button>
-      <button class="nav-item" data-page="autoclick" title="Tự động nhấp">
+      <button class="nav-item" data-page="autoclick" title="Auto Click">
         <span class="nav-icon"><i data-lucide="zap" class="icon-md"></i></span>
-        <span class="nav-label" data-i18n="nav_autoclick">Tự động nhấp</span>
+        <span class="nav-label" data-i18n="nav_autoclick">Auto Click</span>
       </button>
       <button class="nav-item" data-page="history" title="Lịch sử">
         <span class="nav-icon"><i data-lucide="calendar-days" class="icon-md"></i></span>
@@ -71,7 +71,7 @@
     <div class="sidebar-footer">
       <div class="live-indicator">
         <span class="dot pulse"></span>
-        <span data-i18n="live_tracking">Theo dõi thời gian thực</span>
+        <span data-i18n="live_tracking">Live Tracking</span>
       </div>
     </div>
   </aside>
@@ -79,18 +79,18 @@
   <!-- Main content -->
   <main class="content">
 
-    <!-- ── Page: Dashboard (Tập trung toàn bộ số liệu & biểu đồ) ── -->
+    <!-- ── Page: Dashboard ── -->
     <section class="page active" id="page-dashboard">
       <!-- Top header -->
       <div class="page-header">
         <div>
-          <h1 class="page-title" data-i18n="dashboard_title">Trung tâm Tổng quan Hiệu suất</h1>
+          <h1 class="page-title" data-i18n="dashboard_title">Dashboard</h1>
           <p class="page-subtitle" id="dash-date">Đang tải...</p>
         </div>
         <div class="header-actions">
           <button class="btn btn-outline" id="btn-reset-today">
             <i data-lucide="rotate-ccw" class="icon-sm"></i>
-            <span data-i18n="btn_reset_today">Đặt lại hôm nay</span>
+            <span data-i18n="btn_reset_today">Reset</span>
           </button>
         </div>
       </div>
@@ -103,7 +103,7 @@
           </div>
           <div class="metric-info">
             <div class="metric-value" id="today-copy">0</div>
-            <div class="metric-title" data-i18n="metric_copy">Sao chép</div>
+            <div class="metric-title" data-i18n="metric_copy">Copy</div>
           </div>
         </div>
 
@@ -113,7 +113,7 @@
           </div>
           <div class="metric-info">
             <div class="metric-value" id="today-paste">0</div>
-            <div class="metric-title" data-i18n="metric_paste">Dán</div>
+            <div class="metric-title" data-i18n="metric_paste">Paste</div>
           </div>
         </div>
 
@@ -123,7 +123,7 @@
           </div>
           <div class="metric-info">
             <div class="metric-value" id="today-clicks">0</div>
-            <div class="metric-title" data-i18n="metric_clicks">Nhấp chuột</div>
+            <div class="metric-title" data-i18n="metric_clicks">Click</div>
           </div>
         </div>
 
@@ -133,19 +133,19 @@
           </div>
           <div class="metric-info">
             <div class="metric-value" id="today-scroll">0</div>
-            <div class="metric-title" data-i18n="metric_scroll">Cuộn trang</div>
+            <div class="metric-title" data-i18n="metric_scroll">Scroll</div>
           </div>
         </div>
       </div>
 
-      <!-- Charts Grid 1: Biểu đồ đường xu hướng & Biểu đồ tròn phân bổ hôm nay -->
+      <!-- Charts Grid 1 -->
       <div class="charts-row">
-        <!-- Biểu đồ Đường (Trend History Chart) -->
+        <!-- Biểu đồ Đường -->
         <div class="chart-panel chart-panel-large">
           <div class="panel-header">
             <div class="panel-title-wrap">
               <i data-lucide="trending-up" class="icon-sm text-primary"></i>
-              <h2 class="panel-title" data-i18n="chart_trend_title">Xu hướng tương tác 7 ngày qua</h2>
+              <h2 class="panel-title" data-i18n="chart_trend_title">Xu hướng (7 ngày)</h2>
             </div>
             <span class="panel-badge" data-i18n="chart_trend_badge">7 ngày</span>
           </div>
@@ -154,12 +154,12 @@
           </div>
         </div>
 
-        <!-- Biểu đồ Tròn (Doughnut Distribution Chart) -->
+        <!-- Biểu đồ Tròn -->
         <div class="chart-panel chart-panel-small">
           <div class="panel-header">
             <div class="panel-title-wrap">
               <i data-lucide="pie-chart" class="icon-sm text-purple"></i>
-              <h2 class="panel-title" data-i18n="chart_dist_title">Cơ cấu thao tác hôm nay</h2>
+              <h2 class="panel-title" data-i18n="chart_dist_title">Tỷ trọng hôm nay</h2>
             </div>
           </div>
           <div class="chart-wrapper doughnut-wrapper">
@@ -168,14 +168,14 @@
         </div>
       </div>
 
-      <!-- Charts Grid 2: Phân tích so sánh chi tiết -->
+      <!-- Charts Grid 2 -->
       <div class="charts-row">
-        <!-- Biểu đồ Cột ngang: Chi tiết thao tác Chuột -->
+        <!-- Biểu đồ Cột ngang -->
         <div class="chart-panel chart-panel-half">
           <div class="panel-header">
             <div class="panel-title-wrap">
               <i data-lucide="mouse" class="icon-sm text-emerald"></i>
-              <h2 class="panel-title" data-i18n="chart_mouse_title">Chi tiết nhấp chuột & cuộn trang</h2>
+              <h2 class="panel-title" data-i18n="chart_mouse_title">Chi tiết chuột & cuộn</h2>
             </div>
           </div>
           <div class="chart-wrapper">
@@ -183,17 +183,17 @@
           </div>
         </div>
 
-        <!-- Thống kê Tỷ lệ Clipboard & Tích lũy -->
+        <!-- Thống kê Tỷ lệ & Tích lũy -->
         <div class="chart-panel chart-panel-half summary-panel">
           <div class="panel-header">
             <div class="panel-title-wrap">
               <i data-lucide="award" class="icon-sm text-amber"></i>
-              <h2 class="panel-title" data-i18n="chart_ratio_title">Tỷ lệ tương quan & Tích lũy</h2>
+              <h2 class="panel-title" data-i18n="chart_ratio_title">Tỷ lệ & Tổng số</h2>
             </div>
           </div>
           <div class="summary-body">
             <div class="summary-stat-row">
-              <span class="summary-label" data-i18n="summary_cp_ratio">Tỷ lệ Sao chép / Dán hôm nay</span>
+              <span class="summary-label" data-i18n="summary_cp_ratio">Tỷ lệ Copy / Paste</span>
               <span class="summary-value" id="summary-ratio">—</span>
             </div>
             <div class="summary-progress-bar">
@@ -206,11 +206,11 @@
             <div class="summary-stat-grid">
               <div class="mini-stat-card">
                 <div class="mini-stat-num" id="total-today-actions">0</div>
-                <div class="mini-stat-text" data-i18n="summary_today_total">Tổng thao tác hôm nay</div>
+                <div class="mini-stat-text" data-i18n="summary_today_total">Hôm nay</div>
               </div>
               <div class="mini-stat-card">
                 <div class="mini-stat-num" id="total-alltime-actions">0</div>
-                <div class="mini-stat-text" data-i18n="summary_alltime_total">Tổng tích lũy toàn thời gian</div>
+                <div class="mini-stat-text" data-i18n="summary_alltime_total">Toàn thời gian</div>
               </div>
             </div>
           </div>
@@ -218,12 +218,12 @@
       </div>
     </section>
 
-    <!-- ── Page: Auto Clicker (Được thiết kế lại tinh tế) ── -->
+    <!-- ── Page: Auto Click ── -->
     <section class="page" id="page-autoclick">
       <div class="page-header">
         <div>
-          <h1 class="page-title" data-i18n="autoclick_title">Công cụ Tự động nhấp chuột</h1>
-          <p class="page-subtitle" data-i18n="autoclick_subtitle">Tùy chỉnh tốc độ, loại chuột và phím tắt điều khiển tự động hóa</p>
+          <h1 class="page-title" data-i18n="autoclick_title">Auto Clicker</h1>
+          <p class="page-subtitle" data-i18n="autoclick_subtitle">Tốc độ, phím chuột & phím tắt</p>
         </div>
       </div>
 
@@ -233,12 +233,12 @@
           <div class="ac-status-left">
             <div class="ac-pulse-dot" id="ac-pulse-dot"></div>
             <div>
-              <div class="ac-status-text" id="ac-status-text" data-i18n="ac_status_stopped">Sẵn sàng hoạt động</div>
-              <div class="ac-status-sub" data-i18n="ac_hotkey_hint">Nhấn F6 bất kỳ đâu để Bắt đầu / Dừng</div>
+              <div class="ac-status-text" id="ac-status-text" data-i18n="ac_status_stopped">Sẵn sàng</div>
+              <div class="ac-status-sub" data-i18n="ac_hotkey_hint">Hotkey: F6 (Start / Stop)</div>
             </div>
           </div>
           <div class="ac-counter-box">
-            <span class="ac-counter-label" data-i18n="ac_clicks_done">Đã thực hiện:</span>
+            <span class="ac-counter-label" data-i18n="ac_clicks_done">Đã click:</span>
             <span class="ac-counter-value" id="ac-count-display">0</span>
           </div>
         </div>
@@ -246,24 +246,26 @@
         <!-- Controls Card Grid -->
         <div class="autoclick-grid">
           <div class="ac-card">
-            <!-- Interval Option with Custom Stepper & Presets -->
+            <!-- Interval Option with Custom Stepper (Adjacent Buttons) & Presets -->
             <div class="form-group">
-              <label class="form-label" data-i18n="ac_interval_label">Khoảng thời gian giữa các lần nhấp (mili-giây):</label>
+              <label class="form-label" data-i18n="ac_interval_label">Interval (ms):</label>
               
               <div class="stepper-input-group">
-                <button type="button" class="stepper-btn" id="btn-interval-dec" title="Giảm 10ms">
-                  <i data-lucide="minus" class="icon-xs"></i>
-                </button>
                 <input type="number" id="ac-interval" class="stepper-input" value="100" min="10" max="60000" step="10" />
                 <span class="stepper-unit">ms</span>
-                <button type="button" class="stepper-btn" id="btn-interval-inc" title="Tăng 10ms">
-                  <i data-lucide="plus" class="icon-xs"></i>
-                </button>
+                <div class="stepper-btn-cluster">
+                  <button type="button" class="stepper-btn" id="btn-interval-dec" title="-10ms">
+                    <i data-lucide="minus" class="icon-xs"></i>
+                  </button>
+                  <button type="button" class="stepper-btn" id="btn-interval-inc" title="+10ms">
+                    <i data-lucide="plus" class="icon-xs"></i>
+                  </button>
+                </div>
               </div>
 
               <!-- Speed Presets Quick Buttons -->
               <div class="speed-presets">
-                <span class="presets-label">Gợi ý nhanh:</span>
+                <span class="presets-label" data-i18n="ac_presets_label">Gợi ý:</span>
                 <button type="button" class="preset-chip" data-val="20">20ms (50 cps)</button>
                 <button type="button" class="preset-chip active" data-val="100">100ms (10 cps)</button>
                 <button type="button" class="preset-chip" data-val="500">500ms (2 cps)</button>
@@ -273,44 +275,43 @@
 
             <!-- Mouse Button Option -->
             <div class="form-group">
-              <label class="form-label" data-i18n="ac_button_label">Nút chuột thực thi:</label>
+              <label class="form-label" data-i18n="ac_button_label">Nút chuột:</label>
               <div class="radio-cards">
                 <label class="radio-card active">
                   <input type="radio" name="ac-button" value="left" checked />
                   <div class="rc-icon"><i data-lucide="mouse" class="icon-sm"></i></div>
-                  <span data-i18n="ac_btn_left">Chuột trái</span>
+                  <span data-i18n="ac_btn_left">Trái (Left)</span>
                 </label>
                 <label class="radio-card">
                   <input type="radio" name="ac-button" value="right" />
                   <div class="rc-icon"><i data-lucide="mouse-pointer-click" class="icon-sm"></i></div>
-                  <span data-i18n="ac_btn_right">Chuột phải</span>
+                  <span data-i18n="ac_btn_right">Phải (Right)</span>
                 </label>
                 <label class="radio-card">
                   <input type="radio" name="ac-button" value="middle" />
                   <div class="rc-icon"><i data-lucide="disc" class="icon-sm"></i></div>
-                  <span data-i18n="ac_btn_middle">Chuột giữa</span>
+                  <span data-i18n="ac_btn_middle">Giữa (Middle)</span>
                 </label>
               </div>
             </div>
 
             <!-- Repeat Type Option -->
             <div class="form-group">
-              <label class="form-label" data-i18n="ac_repeat_label">Số lần lặp lại:</label>
+              <label class="form-label" data-i18n="ac_repeat_label">Số lần lặp:</label>
               <div class="repeat-options-box">
                 <label class="repeat-row active" id="repeat-row-infinite">
                   <input type="radio" name="ac-repeat-type" value="infinite" checked />
                   <div class="repeat-row-content">
-                    <span class="repeat-title" data-i18n="ac_repeat_infinite">Lặp lại liên tục</span>
-                    <span class="repeat-desc">Hoạt động cho đến khi bạn nhấn F6 hoặc bấm nút Dừng</span>
+                    <span class="repeat-title" data-i18n="ac_repeat_infinite">Vô hạn (Infinite)</span>
                   </div>
                 </label>
                 <label class="repeat-row" id="repeat-row-custom">
                   <input type="radio" name="ac-repeat-type" value="custom" />
                   <div class="repeat-row-content">
-                    <span class="repeat-title" data-i18n="ac_repeat_count">Giới hạn số lần nhấp:</span>
+                    <span class="repeat-title" data-i18n="ac_repeat_count">Giới hạn:</span>
                     <div class="stepper-input-group stepper-input-group-sm">
                       <input type="number" id="ac-repeat-count" class="stepper-input" value="500" min="1" disabled />
-                      <span class="stepper-unit">lượt</span>
+                      <span class="stepper-unit" data-i18n="unit_times">lần</span>
                     </div>
                   </div>
                 </label>
@@ -321,33 +322,51 @@
             <div class="ac-action-row">
               <button class="btn btn-primary btn-lg" id="btn-toggle-autoclick">
                 <i data-lucide="play" class="icon-md" id="ac-btn-icon"></i>
-                <span id="ac-btn-text" data-i18n="ac_btn_start">Bắt đầu tự động nhấp (F6)</span>
+                <span id="ac-btn-text" data-i18n="ac_btn_start">Bắt đầu (F6)</span>
               </button>
             </div>
           </div>
 
-          <!-- Tips Card -->
-          <div class="ac-tips-card">
-            <div class="ac-tips-header">
-              <i data-lucide="sparkles" class="icon-md text-amber"></i>
-              <h3 class="ac-tips-title" data-i18n="ac_tips_title">Mẹo sử dụng:</h3>
-            </div>
-            <ul class="ac-tips-list">
-              <li>
-                <div class="tip-check-box"><i data-lucide="check" class="icon-xs"></i></div>
-                <span data-i18n="ac_tip_1">Bạn có thể chuyển sang cửa sổ game, phần mềm khác rồi nhấn phím F6 để kích hoạt.</span>
-              </li>
-              <li>
-                <div class="tip-check-box"><i data-lucide="check" class="icon-xs"></i></div>
-                <span data-i18n="ac_tip_2">Nhấn phím F6 thêm một lần nữa để dừng lại ngay lập tức.</span>
-              </li>
-            </ul>
-
-            <div class="hotkey-display-box">
-              <div class="hotkey-badge">F6</div>
+          <!-- Hotkey Setup Card -->
+          <div class="ac-hotkey-card">
+            <div class="ac-hotkey-header">
+              <i data-lucide="keyboard" class="icon-md text-primary"></i>
               <div>
-                <div class="hotkey-heading">Global Windows Hotkey</div>
-                <div class="hotkey-sub">Phím tắt kích hoạt toàn hệ thống</div>
+                <h3 class="ac-hotkey-title" data-i18n="ac_hotkey_card_title">Phím tắt (Hotkey)</h3>
+                <p class="ac-hotkey-subtitle" data-i18n="ac_hotkey_card_desc">Kích hoạt toàn hệ thống</p>
+              </div>
+            </div>
+
+            <div class="hotkey-setup-body">
+              <div class="form-group">
+                <label class="form-label" data-i18n="ac_current_hotkey_label">Hotkey hiện tại:</label>
+                <div class="hotkey-current-display">
+                  <span class="hotkey-badge-large" id="current-hotkey-badge">F6</span>
+                  <span class="hotkey-active-tag" data-i18n="badge_active">Active</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" data-i18n="ac_choose_hotkey_label">Phím nhanh (Quick):</label>
+                <div class="hotkey-quick-grid">
+                  <button type="button" class="hotkey-quick-btn" data-key="F6">F6</button>
+                  <button type="button" class="hotkey-quick-btn" data-key="F7">F7</button>
+                  <button type="button" class="hotkey-quick-btn" data-key="F8">F8</button>
+                  <button type="button" class="hotkey-quick-btn" data-key="F9">F9</button>
+                  <button type="button" class="hotkey-quick-btn" data-key="F10">F10</button>
+                  <button type="button" class="hotkey-quick-btn" data-key="F11">F11</button>
+                  <button type="button" class="hotkey-quick-btn" data-key="F12">F12</button>
+                  <button type="button" class="hotkey-quick-btn" data-key="F5">F5</button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" data-i18n="ac_custom_hotkey_label">Tùy chỉnh (Custom):</label>
+                <div class="hotkey-custom-input-row">
+                  <input type="text" id="custom-hotkey-input" class="hotkey-input" data-i18n-placeholder="hotkey_press_key_hint" placeholder="Nhấn phím bất kỳ..." readonly />
+                  <button type="button" class="btn btn-secondary btn-sm" id="btn-save-hotkey" data-i18n="btn_save_hotkey">Lưu</button>
+                </div>
+                <div class="hotkey-status-msg" id="hotkey-status-msg"></div>
               </div>
             </div>
           </div>
@@ -359,8 +378,8 @@
     <section class="page" id="page-history">
       <div class="page-header">
         <div>
-          <h1 class="page-title" data-i18n="history_title">Nhật ký hoạt động chi tiết</h1>
-          <p class="page-subtitle" data-i18n="history_subtitle">Dữ liệu tổng hợp theo từng ngày</p>
+          <h1 class="page-title" data-i18n="history_title">Lịch sử thao tác</h1>
+          <p class="page-subtitle" data-i18n="history_subtitle">Thống kê theo ngày</p>
         </div>
       </div>
 
@@ -371,15 +390,15 @@
               <th data-i18n="th_date">Ngày</th>
               <th data-i18n="th_copy">Copy</th>
               <th data-i18n="th_paste">Paste</th>
-              <th data-i18n="th_left">Chuột Trái</th>
-              <th data-i18n="th_right">Chuột Phải</th>
-              <th data-i18n="th_middle">Chuột Giữa</th>
-              <th data-i18n="th_scroll">Cuộn Trang</th>
-              <th data-i18n="th_total">Tổng cộng</th>
+              <th data-i18n="th_left">Trái</th>
+              <th data-i18n="th_right">Phải</th>
+              <th data-i18n="th_middle">Giữa</th>
+              <th data-i18n="th_scroll">Cuộn</th>
+              <th data-i18n="th_total">Tổng</th>
             </tr>
           </thead>
           <tbody id="history-tbody">
-            <tr><td colspan="8" class="loading-cell" data-i18n="loading_data">Đang tải dữ liệu...</td></tr>
+            <tr><td colspan="8" class="loading-cell" data-i18n="loading_data">Đang tải...</td></tr>
           </tbody>
         </table>
       </div>
@@ -389,8 +408,8 @@
     <section class="page" id="page-settings">
       <div class="page-header">
         <div>
-          <h1 class="page-title" data-i18n="settings_title">Cài đặt ứng dụng</h1>
-          <p class="page-subtitle" data-i18n="settings_subtitle">Quản lý tùy chọn và dữ liệu WinPulse</p>
+          <h1 class="page-title" data-i18n="settings_title">Cài đặt</h1>
+          <p class="page-subtitle" data-i18n="settings_subtitle">Tùy chọn & Dữ liệu</p>
         </div>
       </div>
 
@@ -402,8 +421,8 @@
               <i data-lucide="languages" class="icon-md"></i>
             </div>
             <div>
-              <div class="setting-name" data-i18n="setting_lang">Ngôn ngữ hiển thị</div>
-              <div class="setting-desc" data-i18n="setting_lang_desc">Chuyển đổi giữa Tiếng Việt và English</div>
+              <div class="setting-name" data-i18n="setting_lang">Ngôn ngữ</div>
+              <div class="setting-desc" data-i18n="setting_lang_desc">Tiếng Việt / English</div>
             </div>
           </div>
           <div class="setting-lang-pills">
@@ -418,13 +437,13 @@
               <i data-lucide="folder-open" class="icon-md"></i>
             </div>
             <div>
-              <div class="setting-name" data-i18n="setting_data_path">Thư mục lưu trữ dữ liệu</div>
+              <div class="setting-name" data-i18n="setting_data_path">Thư mục lưu trữ</div>
               <div class="setting-desc" id="data-path-label">Đang tải...</div>
             </div>
           </div>
           <button class="btn btn-outline" id="btn-open-data">
             <i data-lucide="external-link" class="icon-sm"></i>
-            <span data-i18n="btn_open_folder">Xem thư mục</span>
+            <span data-i18n="btn_open_folder">Mở thư mục</span>
           </button>
         </div>
 
@@ -435,10 +454,10 @@
             </div>
             <div>
               <div class="setting-name" data-i18n="setting_theme">Giao diện</div>
-              <div class="setting-desc" data-i18n="setting_theme_desc">Chế độ sáng tiêu chuẩn (Light Mode)</div>
+              <div class="setting-desc" data-i18n="setting_theme_desc">Light Mode</div>
             </div>
           </div>
-          <div class="badge badge-primary" data-i18n="badge_default">Mặc định</div>
+          <div class="badge badge-primary" data-i18n="badge_default">Default</div>
         </div>
 
         <div class="setting-card">
@@ -447,11 +466,11 @@
               <i data-lucide="bell" class="icon-md"></i>
             </div>
             <div>
-              <div class="setting-name" data-i18n="setting_tray">Khay hệ thống</div>
-              <div class="setting-desc" data-i18n="setting_tray_desc">Tự động thu nhỏ về khay hệ thống khi đóng cửa sổ</div>
+              <div class="setting-name" data-i18n="setting_tray">System Tray</div>
+              <div class="setting-desc" data-i18n="setting_tray_desc">Thu nhỏ vào khay khi đóng</div>
             </div>
           </div>
-          <div class="badge badge-success" data-i18n="badge_enabled">Đang bật</div>
+          <div class="badge badge-success" data-i18n="badge_enabled">Bật</div>
         </div>
 
         <div class="setting-card danger-card">
@@ -460,8 +479,8 @@
               <i data-lucide="power" class="icon-md"></i>
             </div>
             <div>
-              <div class="setting-name" data-i18n="setting_quit">Đóng ứng dụng</div>
-              <div class="setting-desc" data-i18n="setting_quit_desc">Dừng tiến trình giám sát và thoát hoàn toàn</div>
+              <div class="setting-name" data-i18n="setting_quit">Thoát ứng dụng</div>
+              <div class="setting-desc" data-i18n="setting_quit_desc">Dừng và thoát hoàn toàn</div>
             </div>
           </div>
           <button class="btn btn-danger" id="btn-quit">
@@ -476,9 +495,9 @@
           <i data-lucide="activity" class="icon-lg"></i>
         </div>
         <div class="about-text">
-          <div class="about-name" data-i18n="about_title">WinPulse Studio · Trung tâm Đo lường Thao tác Windows</div>
-          <div class="about-ver" data-i18n="about_ver">Phiên bản 1.3.0 · Bổ sung Auto Clicker (Phím tắt F6)</div>
-          <div class="about-desc" data-i18n="about_desc">Công cụ đo lường và theo dõi thao tác năng suất máy tính, bảo mật và chạy cục bộ 100%.</div>
+          <div class="about-name" data-i18n="about_title">WinPulse Studio</div>
+          <div class="about-ver" data-i18n="about_ver">Phiên bản 1.3.1</div>
+          <div class="about-desc" data-i18n="about_desc">Công cụ đo lường & Auto Clicker Windows gọn nhẹ.</div>
         </div>
       </div>
     </section>

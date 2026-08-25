@@ -677,7 +677,7 @@ body {
   color: var(--text-primary);
 }
 
-/* Modern Stepper Input (Khắc phục triệt để lỗi đè chữ) */
+/* Modern Stepper Input (Cụm nút tăng giảm gần nhau tinh tế) */
 .stepper-input-group {
   display: flex;
   align-items: center;
@@ -695,25 +695,6 @@ body {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
-.stepper-btn {
-  width: 38px;
-  height: 38px;
-  border: none;
-  background: var(--bg-subtle);
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  flex-shrink: 0;
-}
-
-.stepper-btn:hover {
-  background: #e2e8f0;
-  color: var(--text-primary);
-}
-
 .stepper-input {
   flex: 1;
   border: none;
@@ -723,7 +704,7 @@ body {
   font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
-  text-align: right;
+  text-align: left;
   outline: none;
   -moz-appearance: textfield;
 }
@@ -735,12 +716,48 @@ body {
 }
 
 .stepper-unit {
-  padding: 0 14px 0 6px;
+  padding: 0 8px;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
   font-family: 'JetBrains Mono', monospace;
   user-select: none;
+}
+
+/* Cluster 2 nút tăng giảm kề sát nhau bên phải */
+.stepper-btn-cluster {
+  display: flex;
+  align-items: center;
+  border-left: 1px solid var(--border);
+  background: var(--bg-subtle);
+  height: 38px;
+}
+
+.stepper-btn {
+  width: 36px;
+  height: 38px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.stepper-btn:first-child {
+  border-right: 1px solid var(--border);
+}
+
+.stepper-btn:hover {
+  background: #e2e8f0;
+  color: var(--text-primary);
+}
+
+.stepper-btn:active {
+  background: #cbd5e1;
 }
 
 .stepper-input-group-sm {
@@ -901,8 +918,8 @@ body {
   width: 100%;
 }
 
-/* Tips Card */
-.ac-tips-card {
+/* ─── Hotkey Setup Card ────────────────────────────────────────── */
+.ac-hotkey-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -913,79 +930,142 @@ body {
   gap: 18px;
 }
 
-.ac-tips-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.ac-tips-title {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.ac-tips-list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.ac-tips-list li {
+.ac-hotkey-header {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.5;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
 }
 
-.tip-check-box {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  background: var(--primary-light);
-  color: var(--primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-.hotkey-display-box {
-  margin-top: auto;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 14px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.hotkey-badge {
-  background: var(--text-primary);
-  color: #ffffff;
-  font-family: 'JetBrains Mono', monospace;
+.ac-hotkey-title {
+  font-size: 14.5px;
   font-weight: 700;
-  font-size: 15px;
-  padding: 5px 12px;
-  border-radius: 6px;
-  box-shadow: var(--shadow-sm);
-}
-
-.hotkey-heading {
-  font-size: 12.5px;
-  font-weight: 600;
   color: var(--text-primary);
 }
 
-.hotkey-sub {
-  font-size: 11px;
+.ac-hotkey-subtitle {
+  font-size: 11.5px;
   color: var(--text-secondary);
   margin-top: 2px;
+}
+
+.hotkey-setup-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.hotkey-current-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+}
+
+.hotkey-badge-large {
+  background: var(--text-primary);
+  color: #ffffff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 4px 14px;
+  border-radius: 6px;
+  box-shadow: var(--shadow-sm);
+  letter-spacing: 0.5px;
+}
+
+.hotkey-active-tag {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.hotkey-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.hotkey-quick-btn {
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  font-size: 12.5px;
+  padding: 8px 4px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.hotkey-quick-btn:hover {
+  background: var(--bg-subtle);
+  border-color: var(--border-subtle);
+}
+
+.hotkey-quick-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+  box-shadow: var(--shadow-sm);
+}
+
+.hotkey-custom-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.hotkey-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hotkey-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  background: #f8fafc;
+}
+
+.hotkey-input.recording {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.hotkey-status-msg {
+  font-size: 11.5px;
+  min-height: 16px;
+  margin-top: 4px;
+}
+
+.hotkey-status-msg.success {
+  color: #10b981;
+  font-weight: 500;
+}
+
+.hotkey-status-msg.error {
+  color: #ef4444;
+  font-weight: 500;
 }
 
 /* ─── History Table ───────────────────────────────────────────── */

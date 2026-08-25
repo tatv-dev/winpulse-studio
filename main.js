@@ -312,17 +312,38 @@ function stopNativeAutoClick() {
   }
 }
 
-// Global hotkey F6 to toggle auto-clicker anywhere in Windows
-function registerAutoClickShortcut() {
-  globalShortcut.register('F6', () => {
-    if (isAutoClicking) {
-      stopNativeAutoClick();
-    } else {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('trigger-autoclick-toggle');
-      }
+// Global hotkey to toggle auto-clicker anywhere in Windows
+let currentAutoClickHotkey = 'F6';
+
+function registerAutoClickShortcut(newHotkey) {
+  const hotkeyToRegister = newHotkey || currentAutoClickHotkey;
+  try {
+    if (globalShortcut.isRegistered(currentAutoClickHotkey)) {
+      globalShortcut.unregister(currentAutoClickHotkey);
     }
-  });
+    const success = globalShortcut.register(hotkeyToRegister, () => {
+      if (isAutoClicking) {
+        stopNativeAutoClick();
+      } else {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('trigger-autoclick-toggle');
+        }
+      }
+    });
+    if (success) {
+      currentAutoClickHotkey = hotkeyToRegister;
+      return { success: true, hotkey: currentAutoClickHotkey };
+    } else {
+      // Re-register old hotkey if new fails
+      globalShortcut.register(currentAutoClickHotkey, () => {
+        if (isAutoClicking) stopNativeAutoClick();
+        else if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('trigger-autoclick-toggle');
+      });
+      return { success: false, error: 'Không thể đăng ký phím tắt này (có thể bị xung đột với hệ điều hành)' };
+    }
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
 }
 
 // ─── IPC handlers ──────────────────────────────────────────────────────────────
@@ -349,7 +370,15 @@ ipcMain.handle('stop-autoclick', () => {
 });
 
 ipcMain.handle('get-autoclick-status', () => {
-  return { running: isAutoClicking };
+  return { running: isAutoClicking, hotkey: currentAutoClickHotkey };
+});
+
+ipcMain.handle('get-autoclick-hotkey', () => {
+  return currentAutoClickHotkey;
+});
+
+ipcMain.handle('set-autoclick-hotkey', (_e, key) => {
+  return registerAutoClickShortcut(key);
 });
 
 ipcMain.handle('reset-today', () => {
