@@ -431,11 +431,32 @@ function renderDashboard(data) {
   renderMouseBarChart(leftVal, rightVal, middleVal, scrollVal);
 }
 
+// ─── Chart Colors Helper (Read directly from CSS Design Tokens) ───────────────
+function getChartColors() {
+  const rootStyle = getComputedStyle(document.documentElement);
+  const getToken = (name, fallback) => rootStyle.getPropertyValue(name).trim() || fallback;
+
+  return {
+    copy: getToken('--accent-copy', '#25aceb'),
+    paste: getToken('--accent-paste', '#3aa5ed'),
+    clicks: getToken('--accent-clicks', '#21dda2'),
+    scroll: getToken('--accent-scroll', '#0284c7'),
+    amber: getToken('--accent-amber', '#d97706'),
+    primary: getToken('--primary', '#36cefc'),
+    textPrimary: getToken('--text-primary', '#0f172a'),
+    textSecondary: getToken('--text-secondary', '#475569'),
+    textMuted: getToken('--text-muted', '#94a3b8'),
+    border: getToken('--border', '#e2e8f0'),
+    bgSubtle: getToken('--bg-subtle', '#f1f5f9')
+  };
+}
+
 // ─── Chart 1: Trend Chart (7-Day Interaction Trends) ─────────────────────────
 function renderTrendChart(history) {
   const canvas = document.getElementById('trendChart');
   if (!canvas || typeof Chart === 'undefined') return;
 
+  const colors = getChartColors();
   const labels = history.map(d => formatDayShort(d.date));
   const copyData = history.map(d => d.copy || 0);
   const pasteData = history.map(d => d.paste || 0);
@@ -445,10 +466,13 @@ function renderTrendChart(history) {
     trendChartInstance.data.labels = labels;
     trendChartInstance.data.datasets[0].label = t('label_copy');
     trendChartInstance.data.datasets[0].data = copyData;
+    trendChartInstance.data.datasets[0].borderColor = colors.copy;
     trendChartInstance.data.datasets[1].label = t('label_paste');
     trendChartInstance.data.datasets[1].data = pasteData;
+    trendChartInstance.data.datasets[1].borderColor = colors.paste;
     trendChartInstance.data.datasets[2].label = t('label_clicks');
     trendChartInstance.data.datasets[2].data = clicksData;
+    trendChartInstance.data.datasets[2].borderColor = colors.clicks;
     trendChartInstance.update();
     return;
   }
@@ -462,8 +486,8 @@ function renderTrendChart(history) {
         {
           label: t('label_copy'),
           data: copyData,
-          borderColor: '#2563eb',
-          backgroundColor: 'rgba(37, 99, 235, 0.08)',
+          borderColor: colors.copy,
+          backgroundColor: 'rgba(37, 172, 235, 0.08)',
           tension: 0.35,
           fill: true,
           pointRadius: 4,
@@ -472,8 +496,8 @@ function renderTrendChart(history) {
         {
           label: t('label_paste'),
           data: pasteData,
-          borderColor: '#7c3aed',
-          backgroundColor: 'rgba(124, 58, 237, 0.08)',
+          borderColor: colors.paste,
+          backgroundColor: 'rgba(58, 165, 237, 0.08)',
           tension: 0.35,
           fill: true,
           pointRadius: 4,
@@ -482,8 +506,8 @@ function renderTrendChart(history) {
         {
           label: t('label_clicks'),
           data: clicksData,
-          borderColor: '#059669',
-          backgroundColor: 'rgba(5, 150, 105, 0.08)',
+          borderColor: colors.clicks,
+          backgroundColor: 'rgba(33, 221, 162, 0.08)',
           tension: 0.35,
           fill: true,
           pointRadius: 4,
@@ -500,12 +524,12 @@ function renderTrendChart(history) {
           labels: {
             boxWidth: 12,
             font: { family: "'Inter', sans-serif", size: 11 },
-            color: '#64748b'
+            color: colors.textSecondary
           }
         },
         tooltip: {
           padding: 8,
-          backgroundColor: '#0f172a',
+          backgroundColor: colors.textPrimary,
           titleFont: { family: "'Inter', sans-serif", size: 11 },
           bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
           cornerRadius: 6
@@ -514,12 +538,12 @@ function renderTrendChart(history) {
       scales: {
         x: {
           grid: { display: false },
-          ticks: { font: { family: "'JetBrains Mono', monospace", size: 10 }, color: '#94a3b8' }
+          ticks: { font: { family: "'JetBrains Mono', monospace", size: 10 }, color: colors.textMuted }
         },
         y: {
           beginAtZero: true,
-          grid: { color: '#f1f5f9' },
-          ticks: { font: { family: "'JetBrains Mono', monospace", size: 10 }, color: '#94a3b8' }
+          grid: { color: colors.bgSubtle },
+          ticks: { font: { family: "'JetBrains Mono', monospace", size: 10 }, color: colors.textMuted }
         }
       }
     }
@@ -531,12 +555,13 @@ function renderDistributionChart(copy, paste, clicks, scroll) {
   const canvas = document.getElementById('distributionChart');
   if (!canvas || typeof Chart === 'undefined') return;
 
+  const colors = getChartColors();
   const total = copy + paste + clicks + scroll;
   const dataValues = total > 0 ? [copy, paste, clicks, scroll] : [1, 1, 1, 1];
   const labels = [t('label_copy'), t('label_paste'), t('label_clicks'), t('label_scroll')];
   const backgroundColors = total > 0
-    ? ['#2563eb', '#7c3aed', '#059669', '#0284c7']
-    : ['#e2e8f0', '#e2e8f0', '#e2e8f0', '#e2e8f0'];
+    ? [colors.copy, colors.paste, colors.clicks, colors.scroll]
+    : [colors.border, colors.border, colors.border, colors.border];
 
   if (distributionChartInstance) {
     distributionChartInstance.data.labels = labels;
@@ -569,7 +594,7 @@ function renderDistributionChart(copy, paste, clicks, scroll) {
           labels: {
             boxWidth: 10,
             font: { family: "'Inter', sans-serif", size: 11 },
-            color: '#64748b'
+            color: colors.textSecondary
           }
         },
         tooltip: {
@@ -592,12 +617,15 @@ function renderMouseBarChart(left, right, middle, scroll) {
   const canvas = document.getElementById('mouseBarChart');
   if (!canvas || typeof Chart === 'undefined') return;
 
+  const colors = getChartColors();
   const labels = [t('label_left_click'), t('label_right_click'), t('label_middle_click'), t('label_scroll_action')];
   const dataValues = [left, right, middle, scroll];
+  const barColors = [colors.copy, colors.paste, colors.amber, colors.clicks];
 
   if (mouseBarChartInstance) {
     mouseBarChartInstance.data.labels = labels;
     mouseBarChartInstance.data.datasets[0].data = dataValues;
+    mouseBarChartInstance.data.datasets[0].backgroundColor = barColors;
     mouseBarChartInstance.update();
     return;
   }
@@ -610,7 +638,7 @@ function renderMouseBarChart(left, right, middle, scroll) {
       datasets: [{
         label: t('th_total'),
         data: dataValues,
-        backgroundColor: ['#0284c7', '#9333ea', '#ea580c', '#0d9488'],
+        backgroundColor: barColors,
         borderRadius: 4,
         barThickness: 16
       }]
@@ -622,7 +650,7 @@ function renderMouseBarChart(left, right, middle, scroll) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#0f172a',
+          backgroundColor: colors.textPrimary,
           titleFont: { family: "'Inter', sans-serif", size: 11 },
           bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
           cornerRadius: 6
@@ -631,12 +659,12 @@ function renderMouseBarChart(left, right, middle, scroll) {
       scales: {
         x: {
           beginAtZero: true,
-          grid: { color: '#f1f5f9' },
-          ticks: { font: { family: "'JetBrains Mono', monospace", size: 10 }, color: '#94a3b8' }
+          grid: { color: colors.bgSubtle },
+          ticks: { font: { family: "'JetBrains Mono', monospace", size: 10 }, color: colors.textMuted }
         },
         y: {
           grid: { display: false },
-          ticks: { font: { family: "'Inter', sans-serif", size: 11 }, color: '#475569' }
+          ticks: { font: { family: "'Inter', sans-serif", size: 11 }, color: colors.textSecondary }
         }
       }
     }
