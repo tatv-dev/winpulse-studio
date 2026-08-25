@@ -1,13 +1,48 @@
 /* ═══════════════════════════════════════════════════════════════
-   Count Tool – Renderer App Logic
-   Light Mode & Lucide Icons Integration
+   WinPulse – Renderer Logic
+   Unified Dashboard with i18n (Vietnamese & English) & Chart.js
 ═══════════════════════════════════════════════════════════════ */
 
 'use strict';
 
-// ─── State ───────────────────────────────────────────────────────────────────
+// ─── State & Charts Instances ────────────────────────────────────────────────
+let currentLang = localStorage.getItem('winpulse_lang') || 'vi';
 let currentPage = 'dashboard';
 let statsCache = null;
+let trendChartInstance = null;
+let distributionChartInstance = null;
+let mouseBarChartInstance = null;
+
+// ─── Localization Engine ──────────────────────────────────────────────────────
+function t(key) {
+  const dict = translations[currentLang] || translations.vi;
+  return dict[key] || key;
+}
+
+function setLanguage(lang) {
+  if (lang !== 'vi' && lang !== 'en') return;
+  currentLang = lang;
+  localStorage.setItem('winpulse_lang', lang);
+
+  // Update UI text nodes with data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (key && translations[currentLang][key]) {
+      el.textContent = translations[currentLang][key];
+    }
+  });
+
+  // Update button active state
+  document.getElementById('btn-lang-vi')?.classList.toggle('active', lang === 'vi');
+  document.getElementById('btn-lang-en')?.classList.toggle('active', lang === 'en');
+  document.getElementById('pill-lang-vi')?.classList.toggle('active', lang === 'vi');
+  document.getElementById('pill-lang-en')?.classList.toggle('active', lang === 'en');
+
+  // Re-render charts with new localized labels
+  if (statsCache) {
+    renderAll(statsCache);
+  }
+}
 
 // ─── Initialize Lucide Icons ───────────────────────────────────────────────────
 function refreshIcons() {
@@ -32,6 +67,12 @@ function navigateTo(page) {
   refreshIcons();
 }
 
+// ─── Language Switcher Events ─────────────────────────────────────────────────
+document.getElementById('btn-lang-vi')?.addEventListener('click', () => setLanguage('vi'));
+document.getElementById('btn-lang-en')?.addEventListener('click', () => setLanguage('en'));
+document.getElementById('pill-lang-vi')?.addEventListener('click', () => setLanguage('vi'));
+document.getElementById('pill-lang-en')?.addEventListener('click', () => setLanguage('en'));
+
 // ─── Titlebar controls ───────────────────────────────────────────────────────
 document.getElementById('btn-minimize').addEventListener('click', () => window.api.windowMinimize());
 document.getElementById('btn-maximize').addEventListener('click', () => window.api.windowMaximize());
@@ -39,16 +80,16 @@ document.getElementById('btn-close').addEventListener('click',    () => window.a
 
 // ─── Reset today ─────────────────────────────────────────────────────────────
 document.getElementById('btn-reset-today').addEventListener('click', async () => {
-  if (!confirm('Bạn có chắc muốn đặt lại dữ liệu ngày hôm nay? Thao tác này không thể hoàn tác.')) return;
+  if (!confirm(t('reset_confirm'))) return;
   const data = await window.api.resetToday();
   statsCache = data;
   renderAll(data);
-  showToast('Đã đặt lại dữ liệu ngày hôm nay thành công');
+  showToast(t('reset_success'));
 });
 
 // ─── Quit ─────────────────────────────────────────────────────────────────────
 document.getElementById('btn-quit').addEventListener('click', () => {
-  if (confirm('Thoát ứng dụng Count Tool? Tiến trình theo dõi sẽ dừng lại.')) {
+  if (confirm(t('quit_confirm'))) {
     window.api.windowQuit();
   }
 });
@@ -58,24 +99,40 @@ window.api.getDataPath().then(p => {
   document.getElementById('data-path-label').textContent = p;
 });
 
-// ─── Live stats update ───────────────────────────────────────────────────────
+// ─── Live stats update from main process ─────────────────────────────────────
 window.api.onStatsUpdate(data => {
   statsCache = data;
   renderAll(data);
 });
 
+// ─── Mouse Click & Scroll Tracking ───────────────────────────────────────────
+window.addEventListener('mousedown', (e) => {
+  if (e.button === 0) window.api.recordMouse('left');
+  else if (e.button === 2) window.api.recordMouse('right');
+  else if (e.button === 1) window.api.recordMouse('middle');
+});
+
+let lastScrollTime = 0;
+window.addEventListener('wheel', () => {
+  const now = Date.now();
+  if (now - lastScrollTime > 250) {
+    lastScrollTime = now;
+    window.api.recordMouse('scroll');
+  }
+}, { passive: true });
+
 // ─── Initial load ─────────────────────────────────────────────────────────────
 (async () => {
+  setLanguage(currentLang);
   refreshIcons();
   const data = await window.api.getStats();
   statsCache = data;
   renderAll(data);
 })();
 
-// ─── Render ───────────────────────────────────────────────────────────────────
+// ─── Render All ───────────────────────────────────────────────────────────────
 function renderAll(data) {
   renderDashboard(data);
-  renderClipboard(data);
   renderHistory(data);
   refreshIcons();
 }
@@ -86,46 +143,256 @@ function renderDashboard(data) {
 
   // Date header
   const now = new Date();
+  const locale = currentLang === 'vi' ? 'vi-VN' : 'en-US';
   document.getElementById('dash-date').textContent =
-    now.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    now.toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-  // Stat cards
-  animateCount('today-copy', today.copy ?? 0);
-  animateCount('today-paste', today.paste ?? 0);
-  animateCount('today-total', (today.copy ?? 0) + (today.paste ?? 0));
-  animateCount('alltime-total', (allTime.copy ?? 0) + (allTime.paste ?? 0));
+  // Top Metrics Ribbon
+  const copyVal   = today.copy || 0;
+  const pasteVal  = today.paste || 0;
+  const leftVal   = today.leftClick || 0;
+  const rightVal  = today.rightClick || 0;
+  const middleVal = today.middleClick || 0;
+  const clicksVal = leftVal + rightVal + middleVal;
+  const scrollVal = today.scroll || 0;
+  const todayTotal = copyVal + pasteVal + clicksVal + scrollVal;
 
-  document.getElementById('last-copy-time').textContent = today.lastCopy
-    ? `Lần cuối: ${formatTime(today.lastCopy)}` : 'Chưa có thao tác';
-  document.getElementById('last-paste-time').textContent = today.lastPaste
-    ? `Lần cuối: ${formatTime(today.lastPaste)}` : 'Chưa có thao tác';
+  animateCount('today-copy', copyVal);
+  animateCount('today-paste', pasteVal);
+  animateCount('today-clicks', clicksVal);
+  animateCount('today-scroll', scrollVal);
 
-  const total = (today.copy ?? 0) + (today.paste ?? 0);
-  document.getElementById('copy-paste-ratio').textContent =
-    total > 0 ? `Tỷ lệ Copy/Paste: ${today.copy} / ${today.paste}` : 'Chưa có dữ liệu';
-  document.getElementById('alltime-breakdown').textContent =
-    `${allTime.copy.toLocaleString()} copy · ${allTime.paste.toLocaleString()} paste`;
+  // Summary section
+  const clipTotal = copyVal + pasteVal;
+  const copyPct = clipTotal > 0 ? Math.round((copyVal / clipTotal) * 100) : 50;
+  const pastePct = clipTotal > 0 ? (100 - copyPct) : 50;
 
-  // Bar chart
-  renderBarChart(history, today.date);
+  document.getElementById('summary-ratio').textContent =
+    clipTotal > 0
+      ? `${copyVal} ${t('label_copy')} (${copyPct}%) / ${pasteVal} ${t('label_paste')} (${pastePct}%)`
+      : t('summary_no_cp');
+  document.getElementById('ratio-copy-bar').style.width = copyPct + '%';
+  document.getElementById('ratio-paste-bar').style.width = pastePct + '%';
+
+  document.getElementById('total-today-actions').textContent = todayTotal.toLocaleString();
+  document.getElementById('total-alltime-actions').textContent = (allTime.totalActions || 0).toLocaleString();
+
+  // Render Chart.js Visualizations
+  renderTrendChart(history);
+  renderDistributionChart(copyVal, pasteVal, clicksVal, scrollVal);
+  renderMouseBarChart(leftVal, rightVal, middleVal, scrollVal);
 }
 
-// ── Clipboard page ────────────────────────────────────────────────────────────
-function renderClipboard(data) {
-  const { today } = data;
-  const copy  = today.copy ?? 0;
-  const paste = today.paste ?? 0;
-  const total = copy + paste;
+// ─── Chart 1: Trend Chart (7-Day Interaction Trends) ─────────────────────────
+function renderTrendChart(history) {
+  const canvas = document.getElementById('trendChart');
+  if (!canvas || typeof Chart === 'undefined') return;
 
-  document.getElementById('clip-copy').textContent = copy.toLocaleString();
-  document.getElementById('clip-paste').textContent = paste.toLocaleString();
+  const labels = history.map(d => formatDayShort(d.date));
+  const copyData = history.map(d => d.copy || 0);
+  const pasteData = history.map(d => d.paste || 0);
+  const clicksData = history.map(d => (d.leftClick || 0) + (d.rightClick || 0) + (d.middleClick || 0));
 
-  const copyPct  = total > 0 ? Math.round((copy / total) * 100) : 50;
-  const pastePct = total > 0 ? (100 - copyPct) : 50;
+  if (trendChartInstance) {
+    trendChartInstance.data.labels = labels;
+    trendChartInstance.data.datasets[0].label = t('label_copy');
+    trendChartInstance.data.datasets[0].data = copyData;
+    trendChartInstance.data.datasets[1].label = t('label_paste');
+    trendChartInstance.data.datasets[1].data = pasteData;
+    trendChartInstance.data.datasets[2].label = t('label_clicks');
+    trendChartInstance.data.datasets[2].data = clicksData;
+    trendChartInstance.update();
+    return;
+  }
 
-  document.getElementById('progress-copy').style.width  = copyPct + '%';
-  document.getElementById('progress-paste').style.width = pastePct + '%';
-  document.getElementById('progress-pct').textContent   = `${copyPct}% / ${pastePct}%`;
+  const ctx = canvas.getContext('2d');
+  trendChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: t('label_copy'),
+          data: copyData,
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37, 99, 235, 0.08)',
+          tension: 0.35,
+          fill: true,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        },
+        {
+          label: t('label_paste'),
+          data: pasteData,
+          borderColor: '#7c3aed',
+          backgroundColor: 'rgba(124, 58, 237, 0.08)',
+          tension: 0.35,
+          fill: true,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        },
+        {
+          label: t('label_clicks'),
+          data: clicksData,
+          borderColor: '#059669',
+          backgroundColor: 'rgba(5, 150, 105, 0.08)',
+          tension: 0.35,
+          fill: true,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            boxWidth: 12,
+            font: { family: "'Inter', sans-serif", size: 11 },
+            color: '#64748b'
+          }
+        },
+        tooltip: {
+          padding: 8,
+          backgroundColor: '#0f172a',
+          titleFont: { family: "'Inter', sans-serif", size: 11 },
+          bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
+          cornerRadius: 6
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { family: "'JetBrains Mono', monospace", size: 10 }, color: '#94a3b8' }
+        },
+        y: {
+          beginAtZero: true,
+          grid: { color: '#f1f5f9' },
+          ticks: { font: { family: "'JetBrains Mono', monospace", size: 10 }, color: '#94a3b8' }
+        }
+      }
+    }
+  });
+}
+
+// ─── Chart 2: Distribution Doughnut Chart (Action Breakdown) ─────────────────
+function renderDistributionChart(copy, paste, clicks, scroll) {
+  const canvas = document.getElementById('distributionChart');
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  const total = copy + paste + clicks + scroll;
+  const dataValues = total > 0 ? [copy, paste, clicks, scroll] : [1, 1, 1, 1];
+  const labels = [t('label_copy'), t('label_paste'), t('label_clicks'), t('label_scroll')];
+  const backgroundColors = total > 0
+    ? ['#2563eb', '#7c3aed', '#059669', '#0284c7']
+    : ['#e2e8f0', '#e2e8f0', '#e2e8f0', '#e2e8f0'];
+
+  if (distributionChartInstance) {
+    distributionChartInstance.data.labels = labels;
+    distributionChartInstance.data.datasets[0].data = dataValues;
+    distributionChartInstance.data.datasets[0].backgroundColor = backgroundColors;
+    distributionChartInstance.update();
+    return;
+  }
+
+  const ctx = canvas.getContext('2d');
+  distributionChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: dataValues,
+        backgroundColor: backgroundColors,
+        borderWidth: 2,
+        borderColor: '#ffffff',
+        hoverOffset: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            boxWidth: 10,
+            font: { family: "'Inter', sans-serif", size: 11 },
+            color: '#64748b'
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              if (total === 0) return ` ${t('no_data')}`;
+              const val = context.raw || 0;
+              const pct = Math.round((val / total) * 100);
+              return ` ${context.label}: ${val.toLocaleString()} (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+// ─── Chart 3: Horizontal Bar Chart (Mouse & Scroll Breakdown) ────────────────
+function renderMouseBarChart(left, right, middle, scroll) {
+  const canvas = document.getElementById('mouseBarChart');
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  const labels = [t('label_left_click'), t('label_right_click'), t('label_middle_click'), t('label_scroll_action')];
+  const dataValues = [left, right, middle, scroll];
+
+  if (mouseBarChartInstance) {
+    mouseBarChartInstance.data.labels = labels;
+    mouseBarChartInstance.data.datasets[0].data = dataValues;
+    mouseBarChartInstance.update();
+    return;
+  }
+
+  const ctx = canvas.getContext('2d');
+  mouseBarChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: t('th_total'),
+        data: dataValues,
+        backgroundColor: ['#0284c7', '#9333ea', '#ea580c', '#0d9488'],
+        borderRadius: 4,
+        barThickness: 16
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0f172a',
+          titleFont: { family: "'Inter', sans-serif", size: 11 },
+          bodyFont: { family: "'JetBrains Mono', monospace", size: 11 },
+          cornerRadius: 6
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          grid: { color: '#f1f5f9' },
+          ticks: { font: { family: "'JetBrains Mono', monospace", size: 10 }, color: '#94a3b8' }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { font: { family: "'Inter', sans-serif", size: 11 }, color: '#475569' }
+        }
+      }
+    }
+  });
 }
 
 // ── History page ───────────────────────────────────────────────────────────────
@@ -135,78 +402,54 @@ function renderHistory(data) {
   const tbody = document.getElementById('history-tbody');
 
   if (!history || history.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="loading-cell">Chưa có dữ liệu lịch sử</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="8" class="loading-cell">${t('no_history')}</td></tr>`;
     return;
   }
 
   tbody.innerHTML = [...history].reverse().map(day => {
-    const copy  = day.copy ?? 0;
-    const paste = day.paste ?? 0;
-    const total = copy + paste;
-    const ratio = total > 0 ? `${Math.round((copy / total) * 100)}% Copy` : '—';
+    const copy  = day.copy || 0;
+    const paste = day.paste || 0;
+    const left  = day.leftClick || 0;
+    const right = day.rightClick || 0;
+    const middle= day.middleClick || 0;
+    const scroll= day.scroll || 0;
+    const total = copy + paste + left + right + middle + scroll;
     const isToday = day.date === todayKey;
 
     return `<tr class="${isToday ? 'today-row' : ''}">
       <td class="td-date">
         <span>${formatDateLabel(day.date)}</span>
-        ${isToday ? '<span class="today-badge">Hôm nay</span>' : ''}
+        ${isToday ? `<span class="today-badge">${t('today_badge')}</span>` : ''}
       </td>
       <td class="td-copy">${copy.toLocaleString()}</td>
       <td class="td-paste">${paste.toLocaleString()}</td>
+      <td>${left.toLocaleString()}</td>
+      <td>${right.toLocaleString()}</td>
+      <td>${middle.toLocaleString()}</td>
+      <td>${scroll.toLocaleString()}</td>
       <td class="td-total">${total.toLocaleString()}</td>
-      <td class="td-ratio">${ratio}</td>
     </tr>`;
   }).join('');
 }
 
-// ─── Bar Chart ───────────────────────────────────────────────────────────────
-function renderBarChart(history, todayKey) {
-  const chart = document.getElementById('bar-chart');
-  const maxVal = Math.max(...history.flatMap(d => [d.copy ?? 0, d.paste ?? 0]), 1);
-  const MAX_PX = 115;
-
-  chart.innerHTML = history.map(day => {
-    const copy  = day.copy ?? 0;
-    const paste = day.paste ?? 0;
-    const copyH  = Math.max(Math.round((copy  / maxVal) * MAX_PX), 3);
-    const pasteH = Math.max(Math.round((paste / maxVal) * MAX_PX), 3);
-    const isToday = day.date === todayKey;
-    const label = formatDayShort(day.date);
-
-    return `<div class="bar-group">
-      <div class="bar-pair">
-        <div class="bar copy-bar ${isToday ? 'today' : ''}"
-             style="height:${copyH}px"
-             data-val="Copy: ${copy}" title="Copy: ${copy}"></div>
-        <div class="bar paste-bar ${isToday ? 'today' : ''}"
-             style="height:${pasteH}px"
-             data-val="Paste: ${paste}" title="Paste: ${paste}"></div>
-      </div>
-      <div class="bar-label ${isToday ? 'today-label' : ''}">${label}</div>
-    </div>`;
-  }).join('');
-}
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function formatTime(iso) {
-  return new Date(iso).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-}
-
 function formatDateLabel(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
-  return d.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit' });
+  const locale = currentLang === 'vi' ? 'vi-VN' : 'en-US';
+  return d.toLocaleDateString(locale, { weekday: 'short', day: '2-digit', month: '2-digit' });
 }
 
 function formatDayShort(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   const today = new Date();
   const diff = Math.round((today - d) / 86400000);
-  if (diff === 0) return 'Hôm nay';
-  if (diff === 1) return 'Hôm qua';
-  return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+  if (diff === 0) return currentLang === 'vi' ? 'Hôm nay' : 'Today';
+  if (diff === 1) return currentLang === 'vi' ? 'Hôm qua' : 'Yesterday';
+  const locale = currentLang === 'vi' ? 'vi-VN' : 'en-US';
+  return d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit' });
 }
 
-// Animate counter with bump
+// Animate counter
 const prevValues = {};
 function animateCount(id, newVal) {
   const el = document.getElementById(id);
@@ -214,10 +457,6 @@ function animateCount(id, newVal) {
   const oldVal = prevValues[id] ?? 0;
   if (newVal !== oldVal) {
     el.textContent = newVal.toLocaleString();
-    el.classList.remove('bump');
-    void el.offsetWidth; // reflow
-    el.classList.add('bump');
-    setTimeout(() => el.classList.remove('bump'), 250);
     prevValues[id] = newVal;
   }
 }
@@ -230,7 +469,6 @@ function showToast(msg) {
   const toast = document.createElement('div');
   toast.id = '__toast';
   
-  // Icon and text without any emojis
   toast.innerHTML = `<i data-lucide="check-circle-2" class="icon-sm" style="color: #059669;"></i><span>${msg}</span>`;
   
   Object.assign(toast.style, {
