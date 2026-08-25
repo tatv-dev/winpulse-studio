@@ -7,6 +7,7 @@ const translations = {
   vi: {
     // Navigation
     nav_dashboard: "Tổng quan",
+    nav_autoclick: "Tự động nhấp",
     nav_history: "Lịch sử",
     nav_settings: "Cài đặt",
     live_tracking: "Theo dõi thời gian thực",
@@ -18,7 +19,7 @@ const translations = {
     reset_success: "Đã đặt lại dữ liệu ngày hôm nay thành công",
     quit_confirm: "Thoát ứng dụng WinPulse? Tiến trình theo dõi sẽ dừng lại.",
 
-    // Metric cards - Gọn gàng, thuần Việt, không cần mở ngoặc tiếng Anh
+    // Metric cards
     metric_copy: "Sao chép",
     metric_paste: "Dán",
     metric_clicks: "Nhấp chuột",
@@ -45,6 +46,28 @@ const translations = {
     summary_today_total: "Tổng thao tác hôm nay",
     summary_alltime_total: "Tổng tích lũy toàn thời gian",
     no_data: "Chưa có dữ liệu",
+
+    // Auto Clicker Page
+    autoclick_title: "Công cụ Tự động nhấp chuột",
+    autoclick_subtitle: "Tùy chỉnh tốc độ, loại chuột và phím tắt điều khiển tự động hóa",
+    ac_status_running: "Đang tự động nhấp...",
+    ac_status_stopped: "Sẵn sàng hoạt động",
+    ac_hotkey_hint: "Nhấn F6 bất kỳ đâu để Bắt đầu / Dừng",
+    ac_interval_label: "Khoảng thời gian giữa các lần nhấp (mili-giây):",
+    ac_interval_hint: "Khuyến nghị từ 50ms - 1000ms (100ms = 10 lần/giây)",
+    ac_button_label: "Nút chuột thực thi:",
+    ac_btn_left: "Chuột trái",
+    ac_btn_right: "Chuột phải",
+    ac_btn_middle: "Chuột giữa",
+    ac_repeat_label: "Số lần lặp lại:",
+    ac_repeat_infinite: "Lặp lại liên tục (cho đến khi dừng)",
+    ac_repeat_count: "Giới hạn số lần nhấp:",
+    ac_btn_start: "Bắt đầu tự động nhấp (F6)",
+    ac_btn_stop: "Dừng lại (F6)",
+    ac_clicks_done: "Đã thực hiện:",
+    ac_tips_title: "Mẹo sử dụng:",
+    ac_tip_1: "Bạn có thể chuyển sang cửa sổ game, phần mềm khác rồi nhấn phím F6 để kích hoạt.",
+    ac_tip_2: "Nhấn phím F6 thêm một lần nữa để dừng lại ngay lập tức.",
 
     // History page
     history_title: "Nhật ký hoạt động chi tiết",
@@ -78,12 +101,13 @@ const translations = {
     setting_quit_desc: "Dừng tiến trình giám sát và thoát hoàn toàn",
     btn_quit: "Thoát",
     about_title: "WinPulse Studio · Trung tâm Đo lường Thao tác Windows",
-    about_ver: "Phiên bản 1.2.0 · Hỗ trợ Đa ngôn ngữ (VI / EN)",
+    about_ver: "Phiên bản 1.3.0 · Bổ sung Auto Clicker (Phím tắt F6)",
     about_desc: "Công cụ đo lường và theo dõi thao tác năng suất máy tính, bảo mật và chạy cục bộ 100%."
   },
   en: {
     // Navigation
     nav_dashboard: "Dashboard",
+    nav_autoclick: "Auto Clicker",
     nav_history: "History",
     nav_settings: "Settings",
     live_tracking: "Live Tracking Active",
@@ -123,6 +147,28 @@ const translations = {
     summary_alltime_total: "All-time Cumulative Actions",
     no_data: "No data available",
 
+    // Auto Clicker Page
+    autoclick_title: "Native Auto Clicker Utility",
+    autoclick_subtitle: "Configure click rates, mouse buttons, and global control hotkeys",
+    ac_status_running: "Auto clicking in progress...",
+    ac_status_stopped: "Ready to Start",
+    ac_hotkey_hint: "Press F6 anywhere to Start / Stop",
+    ac_interval_label: "Click Interval (milliseconds):",
+    ac_interval_hint: "Recommended 50ms - 1000ms (100ms = 10 clicks/sec)",
+    ac_button_label: "Mouse Button:",
+    ac_btn_left: "Left Button",
+    ac_btn_right: "Right Button",
+    ac_btn_middle: "Middle Button",
+    ac_repeat_label: "Repeat Count:",
+    ac_repeat_infinite: "Repeat indefinitely (until stopped)",
+    ac_repeat_count: "Limit click count:",
+    ac_btn_start: "Start Auto Clicker (F6)",
+    ac_btn_stop: "Stop Auto Clicker (F6)",
+    ac_clicks_done: "Executed:",
+    ac_tips_title: "Pro Tips:",
+    ac_tip_1: "Switch to any target game or app window and press F6 to start clicking instantly.",
+    ac_tip_2: "Press F6 again at any moment to immediately stop clicking.",
+
     // History page
     history_title: "Detailed Activity Log",
     history_subtitle: "Aggregated metrics breakdown by date",
@@ -155,7 +201,7 @@ const translations = {
     setting_quit_desc: "Stop all tracking services and quit the app",
     btn_quit: "Quit",
     about_title: "WinPulse Studio · Windows Productivity Suite",
-    about_ver: "Version 1.2.0 · Multi-language Support (VI / EN)",
+    about_ver: "Version 1.3.0 · Added Auto Clicker (Hotkey F6)",
     about_desc: "Lightweight and privacy-first Windows desktop telemetry & analytics utility."
   }
 };

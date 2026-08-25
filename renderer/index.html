@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="WinPulse - Trung tâm phân tích & đo lường thao tác Windows" />
+  <meta name="description" content="WinPulse - Trung tâm phân tích, đo lường & tự động hóa Windows" />
   <title>WinPulse</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -24,7 +24,7 @@
         <i data-lucide="activity" class="icon-sm text-primary"></i>
       </div>
       <span class="app-title">WinPulse Studio</span>
-      <span class="app-version">v1.2</span>
+      <span class="app-version">v1.3</span>
     </div>
 
     <div class="titlebar-right-group">
@@ -48,12 +48,16 @@
     </div>
   </div>
 
-  <!-- Sidebar: 3 mục trọng tâm -->
+  <!-- Sidebar: 4 mục khoa học -->
   <aside class="sidebar">
     <nav class="nav-menu">
       <button class="nav-item active" data-page="dashboard" title="Tổng quan">
         <span class="nav-icon"><i data-lucide="layout-dashboard" class="icon-md"></i></span>
         <span class="nav-label" data-i18n="nav_dashboard">Tổng quan</span>
+      </button>
+      <button class="nav-item" data-page="autoclick" title="Tự động nhấp">
+        <span class="nav-icon"><i data-lucide="zap" class="icon-md"></i></span>
+        <span class="nav-label" data-i18n="nav_autoclick">Tự động nhấp</span>
       </button>
       <button class="nav-item" data-page="history" title="Lịch sử">
         <span class="nav-icon"><i data-lucide="calendar-days" class="icon-md"></i></span>
@@ -189,7 +193,7 @@
           </div>
           <div class="summary-body">
             <div class="summary-stat-row">
-              <span class="summary-label" data-i18n="summary_cp_ratio">Tỷ lệ Copy / Paste hôm nay</span>
+              <span class="summary-label" data-i18n="summary_cp_ratio">Tỷ lệ Sao chép / Dán hôm nay</span>
               <span class="summary-value" id="summary-ratio">—</span>
             </div>
             <div class="summary-progress-bar">
@@ -207,6 +211,143 @@
               <div class="mini-stat-card">
                 <div class="mini-stat-num" id="total-alltime-actions">0</div>
                 <div class="mini-stat-text" data-i18n="summary_alltime_total">Tổng tích lũy toàn thời gian</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Page: Auto Clicker (Được thiết kế lại tinh tế) ── -->
+    <section class="page" id="page-autoclick">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title" data-i18n="autoclick_title">Công cụ Tự động nhấp chuột</h1>
+          <p class="page-subtitle" data-i18n="autoclick_subtitle">Tùy chỉnh tốc độ, loại chuột và phím tắt điều khiển tự động hóa</p>
+        </div>
+      </div>
+
+      <div class="autoclick-container">
+        <!-- Status Banner -->
+        <div class="autoclick-banner" id="ac-status-banner">
+          <div class="ac-status-left">
+            <div class="ac-pulse-dot" id="ac-pulse-dot"></div>
+            <div>
+              <div class="ac-status-text" id="ac-status-text" data-i18n="ac_status_stopped">Sẵn sàng hoạt động</div>
+              <div class="ac-status-sub" data-i18n="ac_hotkey_hint">Nhấn F6 bất kỳ đâu để Bắt đầu / Dừng</div>
+            </div>
+          </div>
+          <div class="ac-counter-box">
+            <span class="ac-counter-label" data-i18n="ac_clicks_done">Đã thực hiện:</span>
+            <span class="ac-counter-value" id="ac-count-display">0</span>
+          </div>
+        </div>
+
+        <!-- Controls Card Grid -->
+        <div class="autoclick-grid">
+          <div class="ac-card">
+            <!-- Interval Option with Custom Stepper & Presets -->
+            <div class="form-group">
+              <label class="form-label" data-i18n="ac_interval_label">Khoảng thời gian giữa các lần nhấp (mili-giây):</label>
+              
+              <div class="stepper-input-group">
+                <button type="button" class="stepper-btn" id="btn-interval-dec" title="Giảm 10ms">
+                  <i data-lucide="minus" class="icon-xs"></i>
+                </button>
+                <input type="number" id="ac-interval" class="stepper-input" value="100" min="10" max="60000" step="10" />
+                <span class="stepper-unit">ms</span>
+                <button type="button" class="stepper-btn" id="btn-interval-inc" title="Tăng 10ms">
+                  <i data-lucide="plus" class="icon-xs"></i>
+                </button>
+              </div>
+
+              <!-- Speed Presets Quick Buttons -->
+              <div class="speed-presets">
+                <span class="presets-label">Gợi ý nhanh:</span>
+                <button type="button" class="preset-chip" data-val="20">20ms (50 cps)</button>
+                <button type="button" class="preset-chip active" data-val="100">100ms (10 cps)</button>
+                <button type="button" class="preset-chip" data-val="500">500ms (2 cps)</button>
+                <button type="button" class="preset-chip" data-val="1000">1s (1 cps)</button>
+              </div>
+            </div>
+
+            <!-- Mouse Button Option -->
+            <div class="form-group">
+              <label class="form-label" data-i18n="ac_button_label">Nút chuột thực thi:</label>
+              <div class="radio-cards">
+                <label class="radio-card active">
+                  <input type="radio" name="ac-button" value="left" checked />
+                  <div class="rc-icon"><i data-lucide="mouse" class="icon-sm"></i></div>
+                  <span data-i18n="ac_btn_left">Chuột trái</span>
+                </label>
+                <label class="radio-card">
+                  <input type="radio" name="ac-button" value="right" />
+                  <div class="rc-icon"><i data-lucide="mouse-pointer-click" class="icon-sm"></i></div>
+                  <span data-i18n="ac_btn_right">Chuột phải</span>
+                </label>
+                <label class="radio-card">
+                  <input type="radio" name="ac-button" value="middle" />
+                  <div class="rc-icon"><i data-lucide="disc" class="icon-sm"></i></div>
+                  <span data-i18n="ac_btn_middle">Chuột giữa</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Repeat Type Option -->
+            <div class="form-group">
+              <label class="form-label" data-i18n="ac_repeat_label">Số lần lặp lại:</label>
+              <div class="repeat-options-box">
+                <label class="repeat-row active" id="repeat-row-infinite">
+                  <input type="radio" name="ac-repeat-type" value="infinite" checked />
+                  <div class="repeat-row-content">
+                    <span class="repeat-title" data-i18n="ac_repeat_infinite">Lặp lại liên tục</span>
+                    <span class="repeat-desc">Hoạt động cho đến khi bạn nhấn F6 hoặc bấm nút Dừng</span>
+                  </div>
+                </label>
+                <label class="repeat-row" id="repeat-row-custom">
+                  <input type="radio" name="ac-repeat-type" value="custom" />
+                  <div class="repeat-row-content">
+                    <span class="repeat-title" data-i18n="ac_repeat_count">Giới hạn số lần nhấp:</span>
+                    <div class="stepper-input-group stepper-input-group-sm">
+                      <input type="number" id="ac-repeat-count" class="stepper-input" value="500" min="1" disabled />
+                      <span class="stepper-unit">lượt</span>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="ac-action-row">
+              <button class="btn btn-primary btn-lg" id="btn-toggle-autoclick">
+                <i data-lucide="play" class="icon-md" id="ac-btn-icon"></i>
+                <span id="ac-btn-text" data-i18n="ac_btn_start">Bắt đầu tự động nhấp (F6)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Tips Card -->
+          <div class="ac-tips-card">
+            <div class="ac-tips-header">
+              <i data-lucide="sparkles" class="icon-md text-amber"></i>
+              <h3 class="ac-tips-title" data-i18n="ac_tips_title">Mẹo sử dụng:</h3>
+            </div>
+            <ul class="ac-tips-list">
+              <li>
+                <div class="tip-check-box"><i data-lucide="check" class="icon-xs"></i></div>
+                <span data-i18n="ac_tip_1">Bạn có thể chuyển sang cửa sổ game, phần mềm khác rồi nhấn phím F6 để kích hoạt.</span>
+              </li>
+              <li>
+                <div class="tip-check-box"><i data-lucide="check" class="icon-xs"></i></div>
+                <span data-i18n="ac_tip_2">Nhấn phím F6 thêm một lần nữa để dừng lại ngay lập tức.</span>
+              </li>
+            </ul>
+
+            <div class="hotkey-display-box">
+              <div class="hotkey-badge">F6</div>
+              <div>
+                <div class="hotkey-heading">Global Windows Hotkey</div>
+                <div class="hotkey-sub">Phím tắt kích hoạt toàn hệ thống</div>
               </div>
             </div>
           </div>
@@ -261,7 +402,7 @@
               <i data-lucide="languages" class="icon-md"></i>
             </div>
             <div>
-              <div class="setting-name" data-i18n="setting_lang">Ngôn ngữ hiển thị (Language)</div>
+              <div class="setting-name" data-i18n="setting_lang">Ngôn ngữ hiển thị</div>
               <div class="setting-desc" data-i18n="setting_lang_desc">Chuyển đổi giữa Tiếng Việt và English</div>
             </div>
           </div>
@@ -306,7 +447,7 @@
               <i data-lucide="bell" class="icon-md"></i>
             </div>
             <div>
-              <div class="setting-name" data-i18n="setting_tray">Khay hệ thống (System Tray)</div>
+              <div class="setting-name" data-i18n="setting_tray">Khay hệ thống</div>
               <div class="setting-desc" data-i18n="setting_tray_desc">Tự động thu nhỏ về khay hệ thống khi đóng cửa sổ</div>
             </div>
           </div>
@@ -336,7 +477,7 @@
         </div>
         <div class="about-text">
           <div class="about-name" data-i18n="about_title">WinPulse Studio · Trung tâm Đo lường Thao tác Windows</div>
-          <div class="about-ver" data-i18n="about_ver">Phiên bản 1.2.0 · Hỗ trợ Đa ngôn ngữ (VI / EN)</div>
+          <div class="about-ver" data-i18n="about_ver">Phiên bản 1.3.0 · Bổ sung Auto Clicker (Phím tắt F6)</div>
           <div class="about-desc" data-i18n="about_desc">Công cụ đo lường và theo dõi thao tác năng suất máy tính, bảo mật và chạy cục bộ 100%.</div>
         </div>
       </div>

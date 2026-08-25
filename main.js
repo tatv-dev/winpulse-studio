@@ -219,6 +219,87 @@ function createTray() {
   tray.on('double-click', () => { if (mainWindow) mainWindow.show(); else createWindow(); });
 }
 
+// ─── Auto Clicker Engine (Windows native via user32 mouse_event) ──────────────
+let autoClickInterval = null;
+let isAutoClicking = false;
+
+// We use PowerShell with user32.dll mouse_event for ultra-fast native Windows mouse clicks
+const { exec, spawn } = require('child_process');
+
+function startNativeAutoClick(options) {
+  if (isAutoClicking) return;
+  const intervalMs = Math.max(Number(options.interval) || 100, 10);
+  const clickType = options.clickType || 'left'; // 'left', 'right', 'middle', 'double'
+  const repeatCount = Number(options.repeatCount) || 0; // 0 = infinite
+  let executedCount = 0;
+
+  isAutoClicking = true;
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('autoclick-status', { running: true, count: executedCount });
+  }
+
+  // Windows mouse_event flags:
+  // LEFTDOWN = 0x02, LEFTUP = 0x04
+  // RIGHTDOWN = 0x08, RIGHTUP = 0x10
+  // MIDDLEDOWN = 0x20, MIDDLEUP = 0x40
+  let dwFlags = '0x02, 0x04'; // default left
+  if (clickType === 'right') dwFlags = '0x08, 0x10';
+  else if (clickType === 'middle') dwFlags = '0x20, 0x40';
+
+  const triggerClickScript = `
+    Add-Type -MemberDefinition '[DllImport("user32.dll")] public static extern void mouse_event(int flags, int dx, int dy, int cButtons, int extraInfo);' -Name U32 -Namespace Win32;
+    [Win32.U32]::mouse_event(${dwFlags.split(',')[0]}, 0, 0, 0, 0);
+    [Win32.U32]::mouse_event(${dwFlags.split(',')[1]}, 0, 0, 0, 0);
+  `;
+
+  autoClickInterval = setInterval(() => {
+    if (!isAutoClicking) return;
+
+    // Send click event via PowerShell command inline
+    exec(`powershell -NoProfile -NonInteractive -Command "${triggerClickScript.replace(/\n/g, ' ')}"`, (err) => {
+      if (err) return;
+    });
+
+    // Record stats
+    if (clickType === 'left' || clickType === 'double') recordMouseAction('left');
+    else if (clickType === 'right') recordMouseAction('right');
+    else if (clickType === 'middle') recordMouseAction('middle');
+
+    executedCount++;
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('autoclick-status', { running: true, count: executedCount });
+    }
+
+    if (repeatCount > 0 && executedCount >= repeatCount) {
+      stopNativeAutoClick();
+    }
+  }, intervalMs);
+}
+
+function stopNativeAutoClick() {
+  if (autoClickInterval) {
+    clearInterval(autoClickInterval);
+    autoClickInterval = null;
+  }
+  isAutoClicking = false;
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('autoclick-status', { running: false });
+  }
+}
+
+// Global hotkey F6 to toggle auto-clicker anywhere in Windows
+function registerAutoClickShortcut() {
+  globalShortcut.register('F6', () => {
+    if (isAutoClicking) {
+      stopNativeAutoClick();
+    } else {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('trigger-autoclick-toggle');
+      }
+    }
+  });
+}
+
 // ─── IPC handlers ──────────────────────────────────────────────────────────────
 ipcMain.handle('get-stats', () => buildStatsPayload());
 
@@ -230,6 +311,20 @@ ipcMain.handle('record-paste', () => {
 ipcMain.handle('record-mouse', (_e, type) => {
   recordMouseAction(type);
   return buildStatsPayload();
+});
+
+ipcMain.handle('start-autoclick', (_e, options) => {
+  startNativeAutoClick(options);
+  return { success: true };
+});
+
+ipcMain.handle('stop-autoclick', () => {
+  stopNativeAutoClick();
+  return { success: true };
+});
+
+ipcMain.handle('get-autoclick-status', () => {
+  return { running: isAutoClicking };
 });
 
 ipcMain.handle('reset-today', () => {
@@ -263,11 +358,9 @@ app.whenReady().then(() => {
   createWindow();
   createTray();
   startClipboardMonitor();
+  registerAutoClickShortcut();
 
-  // Register global Ctrl+V shortcut to track paste
-  globalShortcut.register('CommandOrControl+V', () => {
-    recordPaste();
-  });
+
 });
 
 app.on('will-quit', () => {

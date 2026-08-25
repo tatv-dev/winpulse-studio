@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    WinPulse – Renderer Logic
-   Unified Dashboard with i18n (Vietnamese & English) & Chart.js
+   Unified Dashboard + Native Auto Clicker Engine + Bilingual i18n
 ═══════════════════════════════════════════════════════════════ */
 
 'use strict';
@@ -12,6 +12,7 @@ let statsCache = null;
 let trendChartInstance = null;
 let distributionChartInstance = null;
 let mouseBarChartInstance = null;
+let isAutoClickRunning = false;
 
 // ─── Localization Engine ──────────────────────────────────────────────────────
 function t(key) {
@@ -37,6 +38,9 @@ function setLanguage(lang) {
   document.getElementById('btn-lang-en')?.classList.toggle('active', lang === 'en');
   document.getElementById('pill-lang-vi')?.classList.toggle('active', lang === 'vi');
   document.getElementById('pill-lang-en')?.classList.toggle('active', lang === 'en');
+
+  // Update Auto Clicker button text state
+  updateAutoClickUI(isAutoClickRunning);
 
   // Re-render charts with new localized labels
   if (statsCache) {
@@ -105,6 +109,131 @@ window.api.onStatsUpdate(data => {
   renderAll(data);
 });
 
+// ─── Auto Clicker Form Interactivity ──────────────────────────────────────────
+// Radio card selection (Mouse buttons)
+document.querySelectorAll('.radio-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.radio-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    const radio = card.querySelector('input[type="radio"]');
+    if (radio) radio.checked = true;
+  });
+});
+
+// Stepper buttons (+/- interval)
+const intervalInput = document.getElementById('ac-interval');
+document.getElementById('btn-interval-dec')?.addEventListener('click', () => {
+  if (!intervalInput) return;
+  const cur = Number(intervalInput.value) || 100;
+  intervalInput.value = Math.max(10, cur - 10);
+  updatePresetActive(intervalInput.value);
+});
+document.getElementById('btn-interval-inc')?.addEventListener('click', () => {
+  if (!intervalInput) return;
+  const cur = Number(intervalInput.value) || 100;
+  intervalInput.value = Math.min(60000, cur + 10);
+  updatePresetActive(intervalInput.value);
+});
+intervalInput?.addEventListener('input', () => {
+  updatePresetActive(intervalInput.value);
+});
+
+// Speed presets chips
+document.querySelectorAll('.preset-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const val = chip.dataset.val;
+    if (intervalInput && val) {
+      intervalInput.value = val;
+      updatePresetActive(val);
+    }
+  });
+});
+
+function updatePresetActive(val) {
+  document.querySelectorAll('.preset-chip').forEach(chip => {
+    chip.classList.toggle('active', chip.dataset.val === String(val));
+  });
+}
+
+// Repeat rows toggle
+document.querySelectorAll('.repeat-row').forEach(row => {
+  row.addEventListener('click', () => {
+    document.querySelectorAll('.repeat-row').forEach(r => r.classList.remove('active'));
+    row.classList.add('active');
+    const radio = row.querySelector('input[type="radio"]');
+    if (radio) {
+      radio.checked = true;
+      const isCustom = radio.value === 'custom';
+      const countInput = document.getElementById('ac-repeat-count');
+      if (countInput) countInput.disabled = !isCustom;
+    }
+  });
+});
+
+// Toggle Start / Stop
+document.getElementById('btn-toggle-autoclick')?.addEventListener('click', toggleAutoClick);
+
+async function toggleAutoClick() {
+  if (isAutoClickRunning) {
+    await window.api.stopAutoClick();
+  } else {
+    const interval = Number(document.getElementById('ac-interval')?.value) || 100;
+    const selectedBtn = document.querySelector('input[name="ac-button"]:checked')?.value || 'left';
+    const repeatType = document.querySelector('input[name="ac-repeat-type"]:checked')?.value || 'infinite';
+    const repeatCount = repeatType === 'custom' ? (Number(document.getElementById('ac-repeat-count')?.value) || 100) : 0;
+
+    await window.api.startAutoClick({
+      interval: interval,
+      clickType: selectedBtn,
+      repeatCount: repeatCount
+    });
+  }
+}
+
+// Update Auto Clicker UI elements
+function updateAutoClickUI(running, count = 0) {
+  isAutoClickRunning = running;
+  const statusText = document.getElementById('ac-status-text');
+  const pulseDot = document.getElementById('ac-pulse-dot');
+  const btn = document.getElementById('btn-toggle-autoclick');
+  const btnText = document.getElementById('ac-btn-text');
+  const btnIcon = document.getElementById('ac-btn-icon');
+  const countDisplay = document.getElementById('ac-count-display');
+
+  if (countDisplay) {
+    countDisplay.textContent = count.toLocaleString();
+  }
+
+  if (running) {
+    if (statusText) statusText.textContent = t('ac_status_running');
+    if (pulseDot) pulseDot.classList.add('running');
+    if (btn) {
+      btn.className = 'btn btn-danger btn-lg';
+    }
+    if (btnText) btnText.textContent = t('ac_btn_stop');
+    if (btnIcon) btnIcon.setAttribute('data-lucide', 'square');
+  } else {
+    if (statusText) statusText.textContent = t('ac_status_stopped');
+    if (pulseDot) pulseDot.classList.remove('running');
+    if (btn) {
+      btn.className = 'btn btn-primary btn-lg';
+    }
+    if (btnText) btnText.textContent = t('ac_btn_start');
+    if (btnIcon) btnIcon.setAttribute('data-lucide', 'play');
+  }
+  refreshIcons();
+}
+
+// Receive Auto Clicker status updates from main process
+window.api.onAutoClickStatus(data => {
+  updateAutoClickUI(data.running, data.count || 0);
+});
+
+// Global hotkey F6 triggered
+window.api.onTriggerAutoClickToggle(() => {
+  toggleAutoClick();
+});
+
 // ─── Mouse Click & Scroll Tracking ───────────────────────────────────────────
 window.addEventListener('mousedown', (e) => {
   if (e.button === 0) window.api.recordMouse('left');
@@ -128,6 +257,9 @@ window.addEventListener('wheel', () => {
   const data = await window.api.getStats();
   statsCache = data;
   renderAll(data);
+
+  const acStatus = await window.api.getAutoClickStatus();
+  updateAutoClickUI(acStatus?.running || false);
 })();
 
 // ─── Render All ───────────────────────────────────────────────────────────────
