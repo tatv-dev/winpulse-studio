@@ -28,17 +28,21 @@ In addition to telemetry analysis, WinPulse Studio integrates a **Hardware-Level
 
 ### 📊 Real-Time Productivity Telemetry & Analytics
 - **Clipboard Dynamics**: Tracks daily `Ctrl+C` (Copy) and `Ctrl+V` (Paste) counts and automatically computes your daily **Copy/Paste Productivity Ratio**.
+- **Mouse Travel Distance Tracker**: Passive global Euclidean mouse movement calculation measuring daily distance in **Meters (m)** and **Kilometers (km)**.
 - **Interactive Multi-Action Charts**: Dynamic visualizations powered by Chart.js (7-Day Trends, Action Composition Doughnut, and Mouse Breakdown Horizontal Bar).
-- **Zero-Config History Log**: Persistent daily historical tables storing historical interaction stats for post-work review.
+- **Zero-Config History Log & Export**: Persistent daily historical tables with **1-click CSV / JSON Export** for Excel and long-term archiving.
 
-### ⚡ Native Windows Auto Clicker
-- **Hardware-Level Precision**: Leverages Windows native `mouse_event` API for millisecond-level responsiveness (up to 50+ clicks per second).
-- **Customizable Global Hotkey**: Trigger or halt clicks anywhere across Windows using single function keys (`F5`–`F12`) or custom keyboard combinations (`Ctrl+Shift+...`).
+### ⚡ Native Windows Auto Clicker (Hardware-Level)
+- **Hardware-Level Precision**: Leverages Windows native `user32.dll` `mouse_event` & `SetCursorPos` API for millisecond-level responsiveness.
+- **Customizable Target Location**: Supports clicking at the **Current Cursor Position** or at **Fixed Screen Coordinates (X, Y)** with a 1-click **Coord Picker (F7)**.
+- **Anti-Bot Random Jitter**: Optional $\pm 15\%$ interval variation to simulate human-like click cadence.
+- **Customizable Global Hotkeys**: Trigger or halt clicks anywhere across Windows using single function keys (`F5`–`F12`) or custom keyboard combinations (`Ctrl+Shift+...`).
 - **Flexible Trigger Controls**: Supports Left, Right, and Middle mouse buttons with infinite or fixed-count repeat loops.
 - **Compact Stepper Interface**: Ergonomic interval selector with instant speed presets (`20ms`, `100ms`, `500ms`, `1s`).
 
-### 🛡️ System Tray & Background Stealth
-- **Background Execution**: Minimize to system tray (`assets/tray-icon.png`) on close to ensure non-intrusive, continuous tracking.
+### 🛡️ System Tray & Windows Integration
+- **Auto-Start with Windows**: Native toggle switch to launch WinPulse Studio automatically on system boot.
+- **Background Execution**: Minimize to system tray on close to ensure non-intrusive, continuous tracking.
 - **Single-Click Tray Toggle**: Quick show/hide toggle directly from the Windows notification area.
 
 ### 🌐 Minimalist & Bilingual Interface
@@ -57,8 +61,13 @@ In addition to telemetry analysis, WinPulse Studio integrates a **Hardware-Level
 |  Interval (ms): [ 100 ] [-][+]                              |
 |  Presets: [20ms] [100ms] [500ms] [1s]                       |
 |                                                             |
-|  Mouse Button: (●) Left   (○) Right   (○) Middle            |
-|  Repeat:       (●) Infinite (○) Limit [ 500 ] times         |
+|  Click Location: (●) Current Cursor  (○) Fixed Point (X,Y)  |
+|  [X: 960] [Y: 540] [ 🎯 Pick Point (F7) ]                   |
+|                                                             |
+|  [✓] Random Jitter (±15% Anti-Bot Delay Variation)          |
+|                                                             |
+|  Mouse Button:   (●) Left   (○) Right   (○) Middle          |
+|  Repeat:         (●) Infinite (○) Limit [ 500 ] times       |
 |                                                             |
 |  [ ▶ Start Auto Clicker (F6) ]                              |
 +-------------------------------------------------------------+

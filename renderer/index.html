@@ -87,15 +87,9 @@
           <h1 class="page-title" data-i18n="dashboard_title">Dashboard</h1>
           <p class="page-subtitle" id="dash-date">Đang tải...</p>
         </div>
-        <div class="header-actions">
-          <button class="btn btn-outline" id="btn-reset-today">
-            <i data-lucide="rotate-ccw" class="icon-sm"></i>
-            <span data-i18n="btn_reset_today">Reset</span>
-          </button>
-        </div>
       </div>
 
-      <!-- Quick Metrics Ribbon: 4 Thẻ chỉ số chính hôm nay -->
+      <!-- Quick Metrics Ribbon: 5 Thẻ chỉ số chính hôm nay -->
       <div class="metrics-ribbon">
         <div class="metric-card card-copy">
           <div class="metric-icon-box copy-box">
@@ -134,6 +128,16 @@
           <div class="metric-info">
             <div class="metric-value" id="today-scroll">0</div>
             <div class="metric-title" data-i18n="metric_scroll">Scroll</div>
+          </div>
+        </div>
+
+        <div class="metric-card card-distance">
+          <div class="metric-icon-box distance-box">
+            <i data-lucide="navigation" class="icon-md"></i>
+          </div>
+          <div class="metric-info">
+            <div class="metric-value"><span id="today-distance">0</span> <span class="metric-unit">m</span></div>
+            <div class="metric-title" data-i18n="metric_distance">Quãng đường</div>
           </div>
         </div>
       </div>
@@ -246,9 +250,9 @@
         <!-- Controls Card Grid -->
         <div class="autoclick-grid">
           <div class="ac-card">
-            <!-- Interval Option with Custom Stepper (Adjacent Buttons) & Presets -->
+            <!-- Interval Option with Stepper & Presets -->
             <div class="form-group">
-              <label class="form-label" data-i18n="ac_interval_label">Interval (ms):</label>
+              <label class="form-label" data-i18n="ac_interval_label">Khoảng cách (Interval):</label>
               
               <div class="stepper-input-group">
                 <input type="number" id="ac-interval" class="stepper-input" value="100" min="10" max="60000" step="10" />
@@ -270,6 +274,53 @@
                 <button type="button" class="preset-chip active" data-val="100">100ms (10 cps)</button>
                 <button type="button" class="preset-chip" data-val="500">500ms (2 cps)</button>
                 <button type="button" class="preset-chip" data-val="1000">1s (1 cps)</button>
+              </div>
+            </div>
+
+            <!-- Click Position: Current Cursor vs Fixed Coordinates -->
+            <div class="form-group">
+              <label class="form-label" data-i18n="ac_pos_label">Vị trí Click:</label>
+              <div class="pos-options-box">
+                <label class="pos-option-row active" id="pos-row-cursor">
+                  <input type="radio" name="ac-pos-type" value="cursor" checked />
+                  <span data-i18n="ac_pos_cursor">Vị trí con trỏ chuột</span>
+                </label>
+                <label class="pos-option-row" id="pos-row-fixed">
+                  <input type="radio" name="ac-pos-type" value="fixed" />
+                  <span data-i18n="ac_pos_fixed">Tọa độ cố định</span>
+                </label>
+              </div>
+
+              <!-- Fixed Coord Inputs -->
+              <div class="fixed-coord-wrap hidden" id="fixed-coord-panel">
+                <div class="coord-inputs">
+                  <div class="coord-field">
+                    <span class="coord-tag">X:</span>
+                    <input type="number" id="ac-pos-x" class="coord-input" value="500" />
+                  </div>
+                  <div class="coord-field">
+                    <span class="coord-tag">Y:</span>
+                    <input type="number" id="ac-pos-y" class="coord-input" value="500" />
+                  </div>
+                </div>
+                <button type="button" class="btn btn-outline btn-sm" id="btn-pick-coord" title="Nhấn F7 hoặc nút này để lấy tọa độ chuột">
+                  <i data-lucide="crosshair" class="icon-xs"></i>
+                  <span data-i18n="ac_pick_coord_btn">Bắt tọa độ (F7)</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Random Jitter (Anti-Bot) Toggle -->
+            <div class="form-group">
+              <div class="checkbox-row">
+                <label class="custom-checkbox-wrap">
+                  <input type="checkbox" id="ac-use-jitter" />
+                  <span class="checkbox-box"></span>
+                  <div class="checkbox-text">
+                    <span class="checkbox-title" data-i18n="ac_jitter_label">Random Jitter (Chống Bot):</span>
+                    <span class="checkbox-sub" data-i18n="ac_jitter_desc">Dao động ngẫu nhiên ±15% thời gian click</span>
+                  </div>
+                </label>
               </div>
             </div>
 
@@ -350,13 +401,11 @@
                 <label class="form-label" data-i18n="ac_choose_hotkey_label">Phím nhanh (Quick):</label>
                 <div class="hotkey-quick-grid">
                   <button type="button" class="hotkey-quick-btn" data-key="F6">F6</button>
-                  <button type="button" class="hotkey-quick-btn" data-key="F7">F7</button>
                   <button type="button" class="hotkey-quick-btn" data-key="F8">F8</button>
                   <button type="button" class="hotkey-quick-btn" data-key="F9">F9</button>
                   <button type="button" class="hotkey-quick-btn" data-key="F10">F10</button>
                   <button type="button" class="hotkey-quick-btn" data-key="F11">F11</button>
                   <button type="button" class="hotkey-quick-btn" data-key="F12">F12</button>
-                  <button type="button" class="hotkey-quick-btn" data-key="F5">F5</button>
                 </div>
               </div>
 
@@ -381,6 +430,18 @@
           <h1 class="page-title" data-i18n="history_title">Lịch sử thao tác</h1>
           <p class="page-subtitle" data-i18n="history_subtitle">Thống kê theo ngày</p>
         </div>
+        <div class="header-actions">
+          <div class="export-dropdown">
+            <button class="btn btn-outline" id="btn-export-csv">
+              <i data-lucide="download" class="icon-sm"></i>
+              <span data-i18n="btn_export_csv">Xuất CSV</span>
+            </button>
+            <button class="btn btn-outline" id="btn-export-json">
+              <i data-lucide="file-json" class="icon-sm"></i>
+              <span data-i18n="btn_export_json">Xuất JSON</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <div class="history-table-wrap">
@@ -394,11 +455,12 @@
               <th data-i18n="th_right">Phải</th>
               <th data-i18n="th_middle">Giữa</th>
               <th data-i18n="th_scroll">Cuộn</th>
+              <th data-i18n="th_distance">Khoảng cách</th>
               <th data-i18n="th_total">Tổng</th>
             </tr>
           </thead>
           <tbody id="history-tbody">
-            <tr><td colspan="8" class="loading-cell" data-i18n="loading_data">Đang tải...</td></tr>
+            <tr><td colspan="9" class="loading-cell" data-i18n="loading_data">Đang tải...</td></tr>
           </tbody>
         </table>
       </div>
@@ -428,6 +490,40 @@
           <div class="setting-lang-pills">
             <button class="pill-btn active" id="pill-lang-vi">Tiếng Việt</button>
             <button class="pill-btn" id="pill-lang-en">English</button>
+          </div>
+        </div>
+
+        <!-- Auto Start with Windows Toggle -->
+        <div class="setting-card">
+          <div class="setting-info">
+            <div class="setting-icon-box">
+              <i data-lucide="power" class="icon-md text-primary"></i>
+            </div>
+            <div>
+              <div class="setting-name" data-i18n="setting_autostart">Khởi động cùng Windows</div>
+              <div class="setting-desc" data-i18n="setting_autostart_desc">Tự động chạy WinPulse khi mở máy</div>
+            </div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-autostart" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Export Telemetry Data -->
+        <div class="setting-card">
+          <div class="setting-info">
+            <div class="setting-icon-box">
+              <i data-lucide="database" class="icon-md"></i>
+            </div>
+            <div>
+              <div class="setting-name" data-i18n="setting_export">Xuất dữ liệu thống kê</div>
+              <div class="setting-desc" data-i18n="setting_export_desc">Tải xuống toàn bộ lịch sử (CSV / JSON)</div>
+            </div>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-outline btn-sm" id="btn-settings-export-csv">CSV</button>
+            <button class="btn btn-outline btn-sm" id="btn-settings-export-json">JSON</button>
           </div>
         </div>
 
@@ -470,13 +566,16 @@
               <div class="setting-desc" data-i18n="setting_tray_desc">Thu nhỏ vào khay khi đóng</div>
             </div>
           </div>
-          <div class="badge badge-success" data-i18n="badge_enabled">Bật</div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-tray" checked />
+            <span class="slider"></span>
+          </label>
         </div>
 
         <div class="setting-card danger-card">
           <div class="setting-info">
             <div class="setting-icon-box danger-icon-box">
-              <i data-lucide="power" class="icon-md"></i>
+              <i data-lucide="log-out" class="icon-md"></i>
             </div>
             <div>
               <div class="setting-name" data-i18n="setting_quit">Thoát ứng dụng</div>
@@ -484,7 +583,7 @@
             </div>
           </div>
           <button class="btn btn-danger" id="btn-quit">
-            <i data-lucide="log-out" class="icon-sm"></i>
+            <i data-lucide="power" class="icon-sm"></i>
             <span data-i18n="btn_quit">Thoát</span>
           </button>
         </div>
@@ -496,7 +595,7 @@
         </div>
         <div class="about-text">
           <div class="about-name" data-i18n="about_title">WinPulse Studio</div>
-          <div class="about-ver" data-i18n="about_ver">Phiên bản 1.3.1</div>
+          <div class="about-ver" data-i18n="about_ver">Phiên bản 1.4.0</div>
           <div class="about-desc" data-i18n="about_desc">Công cụ đo lường & Auto Clicker Windows gọn nhẹ.</div>
         </div>
       </div>

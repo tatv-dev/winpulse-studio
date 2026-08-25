@@ -97,15 +97,6 @@ document.getElementById('btn-minimize').addEventListener('click', () => window.a
 document.getElementById('btn-maximize').addEventListener('click', () => window.api.windowMaximize());
 document.getElementById('btn-close').addEventListener('click',    () => window.api.windowClose());
 
-// ─── Reset today ─────────────────────────────────────────────────────────────
-document.getElementById('btn-reset-today').addEventListener('click', async () => {
-  if (!confirm(t('reset_confirm'))) return;
-  const data = await window.api.resetToday();
-  statsCache = data;
-  renderAll(data);
-  showToast(t('reset_success'));
-});
-
 // ─── Quit ─────────────────────────────────────────────────────────────────────
 document.getElementById('btn-quit').addEventListener('click', () => {
   if (confirm(t('quit_confirm'))) {
@@ -188,6 +179,40 @@ document.querySelectorAll('.repeat-row').forEach(row => {
 // Toggle Start / Stop
 document.getElementById('btn-toggle-autoclick')?.addEventListener('click', toggleAutoClick);
 
+// Position radio toggle (Cursor vs Fixed)
+document.querySelectorAll('input[name="ac-pos-type"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const isFixed = radio.value === 'fixed';
+    document.getElementById('pos-row-cursor')?.classList.toggle('active', !isFixed);
+    document.getElementById('pos-row-fixed')?.classList.toggle('active', isFixed);
+    const panel = document.getElementById('fixed-coord-panel');
+    if (panel) panel.classList.toggle('hidden', !isFixed);
+  });
+});
+
+// Pick coordinate button & global event
+document.getElementById('btn-pick-coord')?.addEventListener('click', async () => {
+  const pos = await window.api.getCursorPos();
+  if (pos) {
+    applyPickedCoordinate(pos);
+  }
+});
+
+function applyPickedCoordinate(pos) {
+  const xInput = document.getElementById('ac-pos-x');
+  const yInput = document.getElementById('ac-pos-y');
+  if (xInput && yInput) {
+    xInput.value = pos.x;
+    yInput.value = pos.y;
+    showToast(`Đã lấy tọa độ: (${pos.x}, ${pos.y})`);
+  }
+}
+
+// Receive F7 pick coord event from main process
+window.api.onTriggerPickCoord(pos => {
+  applyPickedCoordinate(pos);
+});
+
 async function toggleAutoClick() {
   if (isAutoClickRunning) {
     await window.api.stopAutoClick();
@@ -196,11 +221,20 @@ async function toggleAutoClick() {
     const selectedBtn = document.querySelector('input[name="ac-button"]:checked')?.value || 'left';
     const repeatType = document.querySelector('input[name="ac-repeat-type"]:checked')?.value || 'infinite';
     const repeatCount = repeatType === 'custom' ? (Number(document.getElementById('ac-repeat-count')?.value) || 100) : 0;
+    const posType = document.querySelector('input[name="ac-pos-type"]:checked')?.value || 'cursor';
+    const useFixedPos = posType === 'fixed';
+    const posX = Number(document.getElementById('ac-pos-x')?.value) || 0;
+    const posY = Number(document.getElementById('ac-pos-y')?.value) || 0;
+    const useJitter = !!document.getElementById('ac-use-jitter')?.checked;
 
     await window.api.startAutoClick({
       interval: interval,
       clickType: selectedBtn,
-      repeatCount: repeatCount
+      repeatCount: repeatCount,
+      useFixedPos: useFixedPos,
+      posX: posX,
+      posY: posY,
+      useJitter: useJitter
     });
   }
 }
@@ -396,19 +430,21 @@ function renderDashboard(data) {
     now.toLocaleDateString(locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   // Top Metrics Ribbon
-  const copyVal   = today.copy || 0;
-  const pasteVal  = today.paste || 0;
-  const leftVal   = today.leftClick || 0;
-  const rightVal  = today.rightClick || 0;
-  const middleVal = today.middleClick || 0;
-  const clicksVal = leftVal + rightVal + middleVal;
-  const scrollVal = today.scroll || 0;
-  const todayTotal = copyVal + pasteVal + clicksVal + scrollVal;
+  const copyVal     = today.copy || 0;
+  const pasteVal    = today.paste || 0;
+  const leftVal     = today.leftClick || 0;
+  const rightVal    = today.rightClick || 0;
+  const middleVal   = today.middleClick || 0;
+  const clicksVal   = leftVal + rightVal + middleVal;
+  const scrollVal   = today.scroll || 0;
+  const distanceVal = today.distanceMeters || 0;
+  const todayTotal  = copyVal + pasteVal + clicksVal + scrollVal;
 
   animateCount('today-copy', copyVal);
   animateCount('today-paste', pasteVal);
   animateCount('today-clicks', clicksVal);
   animateCount('today-scroll', scrollVal);
+  animateCount('today-distance', distanceVal);
 
   // Summary section
   const clipTotal = copyVal + pasteVal;
@@ -678,19 +714,20 @@ function renderHistory(data) {
   const tbody = document.getElementById('history-tbody');
 
   if (!history || history.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" class="loading-cell">${t('no_history')}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="loading-cell">${t('no_history')}</td></tr>`;
     return;
   }
 
   tbody.innerHTML = [...history].reverse().map(day => {
-    const copy  = day.copy || 0;
-    const paste = day.paste || 0;
-    const left  = day.leftClick || 0;
-    const right = day.rightClick || 0;
-    const middle= day.middleClick || 0;
-    const scroll= day.scroll || 0;
-    const total = copy + paste + left + right + middle + scroll;
-    const isToday = day.date === todayKey;
+    const copy     = day.copy || 0;
+    const paste    = day.paste || 0;
+    const left     = day.leftClick || 0;
+    const right    = day.rightClick || 0;
+    const middle   = day.middleClick || 0;
+    const scroll   = day.scroll || 0;
+    const distance = (day.distanceMeters || 0) + ' m';
+    const total    = copy + paste + left + right + middle + scroll;
+    const isToday  = day.date === todayKey;
 
     return `<tr class="${isToday ? 'today-row' : ''}">
       <td class="td-date">
@@ -703,10 +740,61 @@ function renderHistory(data) {
       <td>${right.toLocaleString()}</td>
       <td>${middle.toLocaleString()}</td>
       <td>${scroll.toLocaleString()}</td>
+      <td>${distance}</td>
       <td class="td-total">${total.toLocaleString()}</td>
     </tr>`;
   }).join('');
 }
+
+// ─── Export Handlers ──────────────────────────────────────────────────────────
+async function triggerExport(format) {
+  const res = await window.api.exportData(format);
+  if (res && res.success) {
+    showToast(t('export_success'));
+  } else if (res && !res.canceled) {
+    showToast(t('export_fail'));
+  }
+}
+
+document.getElementById('btn-export-csv')?.addEventListener('click', () => triggerExport('csv'));
+document.getElementById('btn-export-json')?.addEventListener('click', () => triggerExport('json'));
+document.getElementById('btn-settings-export-csv')?.addEventListener('click', () => triggerExport('csv'));
+document.getElementById('btn-settings-export-json')?.addEventListener('click', () => triggerExport('json'));
+
+// ─── Auto-Start with Windows ──────────────────────────────────────────────────
+const autoStartToggle = document.getElementById('toggle-autostart');
+if (autoStartToggle) {
+  window.api.getAutoStart().then(enabled => {
+    autoStartToggle.checked = enabled;
+  });
+
+  autoStartToggle.addEventListener('change', async () => {
+    const newState = await window.api.setAutoStart(autoStartToggle.checked);
+    autoStartToggle.checked = newState;
+    showToast(newState ? 'Đã bật tự khởi động' : 'Đã tắt tự khởi động');
+  });
+}
+
+// ─── System Tray Minimize Toggle ──────────────────────────────────────────────
+const trayToggle = document.getElementById('toggle-tray');
+if (trayToggle) {
+  window.api.getMinimizeToTray().then(enabled => {
+    trayToggle.checked = enabled;
+  });
+
+  trayToggle.addEventListener('change', async () => {
+    const newState = await window.api.setMinimizeToTray(trayToggle.checked);
+    trayToggle.checked = newState;
+    showToast(newState ? 'Đã bật thu nhỏ vào khay' : 'Đã tắt thu nhỏ vào khay');
+  });
+}
+
+// ─── Open Data Folder ─────────────────────────────────────────────────────────
+document.getElementById('btn-open-data')?.addEventListener('click', async () => {
+  await window.api.openDataFolder();
+});
+
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatDateLabel(dateStr) {

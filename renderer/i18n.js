@@ -24,6 +24,7 @@ const translations = {
     metric_paste: "Paste",
     metric_clicks: "Click",
     metric_scroll: "Scroll",
+    metric_distance: "Quãng đường",
 
     // Chart titles & legends
     chart_trend_title: "Xu hướng (7 ngày)",
@@ -36,6 +37,7 @@ const translations = {
     label_paste: "Paste",
     label_clicks: "Click",
     label_scroll: "Scroll",
+    label_distance: "Quãng đường",
     label_left_click: "Chuột trái",
     label_right_click: "Chuột phải",
     label_middle_click: "Chuột giữa",
@@ -67,6 +69,16 @@ const translations = {
     ac_clicks_done: "Đã click:",
     ac_presets_label: "Gợi ý:",
     unit_times: "lần",
+
+    // Auto Clicker V1.4 New features: Position & Jitter
+    ac_pos_label: "Vị trí Click:",
+    ac_pos_cursor: "Vị trí con trỏ chuột",
+    ac_pos_fixed: "Tọa độ cố định",
+    ac_pick_coord_btn: "Bắt tọa độ (F7)",
+    ac_pick_coord_hint: "Nhấn F7 hoặc nút để lấy tọa độ chuột hiện tại",
+    ac_jitter_label: "Random Jitter (Chống Bot):",
+    ac_jitter_desc: "Dao động ngẫu nhiên ±15% thời gian click",
+
     ac_hotkey_card_title: "Phím tắt (Hotkey)",
     ac_hotkey_card_desc: "Kích hoạt toàn hệ thống",
     ac_current_hotkey_label: "Hotkey hiện tại:",
@@ -80,6 +92,9 @@ const translations = {
     // History page
     history_title: "Lịch sử thao tác",
     history_subtitle: "Thống kê theo ngày",
+    btn_export_data: "Xuất file",
+    btn_export_csv: "Xuất CSV",
+    btn_export_json: "Xuất JSON",
     th_date: "Ngày",
     th_copy: "Copy",
     th_paste: "Paste",
@@ -87,6 +102,7 @@ const translations = {
     th_right: "Phải",
     th_middle: "Giữa",
     th_scroll: "Cuộn",
+    th_distance: "Khoảng cách",
     th_total: "Tổng",
     today_badge: "Hôm nay",
     loading_data: "Đang tải...",
@@ -97,6 +113,10 @@ const translations = {
     settings_subtitle: "Tùy chọn & Dữ liệu",
     setting_lang: "Ngôn ngữ",
     setting_lang_desc: "Tiếng Việt / English",
+    setting_autostart: "Khởi động cùng Windows",
+    setting_autostart_desc: "Tự động chạy WinPulse khi mở máy",
+    setting_export: "Xuất dữ liệu thống kê",
+    setting_export_desc: "Tải xuống toàn bộ lịch sử (CSV / JSON)",
     setting_data_path: "Thư mục lưu trữ",
     btn_open_folder: "Mở thư mục",
     setting_theme: "Giao diện",
@@ -109,8 +129,10 @@ const translations = {
     setting_quit_desc: "Dừng và thoát hoàn toàn",
     btn_quit: "Thoát",
     about_title: "WinPulse Studio",
-    about_ver: "Phiên bản 1.3.1",
-    about_desc: "Công cụ đo lường & Auto Clicker Windows gọn nhẹ."
+    about_ver: "Phiên bản 1.4.0",
+    about_desc: "Công cụ đo lường & Auto Clicker Windows gọn nhẹ.",
+    export_success: "Xuất file thành công!",
+    export_fail: "Không thể xuất file"
   },
   en: {
     // Navigation
@@ -132,6 +154,7 @@ const translations = {
     metric_paste: "Paste",
     metric_clicks: "Clicks",
     metric_scroll: "Scroll",
+    metric_distance: "Mouse Distance",
 
     // Chart titles & legends
     chart_trend_title: "Trend (7 Days)",
@@ -144,6 +167,7 @@ const translations = {
     label_paste: "Paste",
     label_clicks: "Clicks",
     label_scroll: "Scroll",
+    label_distance: "Distance",
     label_left_click: "Left",
     label_right_click: "Right",
     label_middle_click: "Middle",
@@ -175,6 +199,16 @@ const translations = {
     ac_clicks_done: "Clicks:",
     ac_presets_label: "Presets:",
     unit_times: "times",
+
+    // Auto Clicker V1.4 New features
+    ac_pos_label: "Click Location:",
+    ac_pos_cursor: "Current Cursor Position",
+    ac_pos_fixed: "Fixed Coordinates",
+    ac_pick_coord_btn: "Pick Point (F7)",
+    ac_pick_coord_hint: "Press F7 or button to capture current mouse position",
+    ac_jitter_label: "Random Jitter (Anti-Bot):",
+    ac_jitter_desc: "Random ±15% interval variation",
+
     ac_hotkey_card_title: "Global Hotkey",
     ac_hotkey_card_desc: "System-wide trigger",
     ac_current_hotkey_label: "Current Hotkey:",
@@ -188,6 +222,9 @@ const translations = {
     // History page
     history_title: "History Log",
     history_subtitle: "Daily statistics",
+    btn_export_data: "Export",
+    btn_export_csv: "Export CSV",
+    btn_export_json: "Export JSON",
     th_date: "Date",
     th_copy: "Copy",
     th_paste: "Paste",
@@ -195,6 +232,7 @@ const translations = {
     th_right: "Right",
     th_middle: "Middle",
     th_scroll: "Scroll",
+    th_distance: "Distance",
     th_total: "Total",
     today_badge: "Today",
     loading_data: "Loading...",
@@ -205,6 +243,10 @@ const translations = {
     settings_subtitle: "Options & Storage",
     setting_lang: "Language",
     setting_lang_desc: "Tiếng Việt / English",
+    setting_autostart: "Auto-Start with Windows",
+    setting_autostart_desc: "Run WinPulse automatically on system boot",
+    setting_export: "Export Telemetry Data",
+    setting_export_desc: "Download full interaction log (CSV / JSON)",
     setting_data_path: "Data Directory",
     btn_open_folder: "Open Folder",
     setting_theme: "Theme",
@@ -217,7 +259,9 @@ const translations = {
     setting_quit_desc: "Stop and exit",
     btn_quit: "Quit",
     about_title: "WinPulse Studio",
-    about_ver: "Version 1.3.1",
-    about_desc: "Lightweight Windows telemetry & native Auto Clicker."
+    about_ver: "Version 1.4.0",
+    about_desc: "Lightweight Windows telemetry & native Auto Clicker.",
+    export_success: "Export completed!",
+    export_fail: "Failed to export"
   }
 };
