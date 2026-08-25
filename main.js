@@ -216,6 +216,14 @@ function createWindow() {
     mainWindow.show();
   });
 
+  mainWindow.on('close', (e) => {
+    if (!app.isQuitting) {
+      e.preventDefault();
+      mainWindow.hide();
+    }
+    return false;
+  });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
@@ -226,22 +234,71 @@ function createWindow() {
 }
 
 // ─── Tray ──────────────────────────────────────────────────────────────────────
-function createTray() {
+function getTrayIcon() {
   const iconPath = path.join(__dirname, 'assets', 'tray-icon.png');
-  const icon = fs.existsSync(iconPath)
-    ? nativeImage.createFromPath(iconPath)
-    : nativeImage.createEmpty();
+  if (fs.existsSync(iconPath)) {
+    return nativeImage.createFromPath(iconPath);
+  }
+  return nativeImage.createFromDataURL(TRAY_ICON_DATA);
+}
 
-  tray = new Tray(icon.isEmpty() ? nativeImage.createFromDataURL(TRAY_ICON_DATA) : icon);
-  tray.setToolTip('WinPulse - Thống kê & Thao tác Windows');
+function createTray() {
+  try {
+    const icon = getTrayIcon();
+    tray = new Tray(icon);
+    tray.setToolTip('WinPulse Studio');
 
-  const menu = Menu.buildFromTemplate([
-    { label: 'Mở WinPulse', click: () => { if (mainWindow) mainWindow.show(); else createWindow(); } },
-    { type: 'separator' },
-    { label: 'Thoát', click: () => app.quit() },
-  ]);
-  tray.setContextMenu(menu);
-  tray.on('double-click', () => { if (mainWindow) mainWindow.show(); else createWindow(); });
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: 'Mở WinPulse',
+        click: () => {
+          if (mainWindow) {
+            mainWindow.show();
+            mainWindow.focus();
+          } else {
+            createWindow();
+          }
+        }
+      },
+      { type: 'separator' },
+      {
+        label: 'Thoát',
+        click: () => {
+          app.isQuitting = true;
+          app.quit();
+        }
+      }
+    ]);
+
+    tray.setContextMenu(contextMenu);
+
+    // Single click to toggle or show window on Windows
+    tray.on('click', () => {
+      if (!mainWindow) {
+        createWindow();
+      } else if (mainWindow.isVisible()) {
+        if (mainWindow.isFocused()) {
+          mainWindow.hide();
+        } else {
+          mainWindow.focus();
+        }
+      } else {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    });
+
+    tray.on('double-click', () => {
+      if (mainWindow) {
+        mainWindow.show();
+        mainWindow.focus();
+      } else {
+        createWindow();
+      }
+    });
+  } catch (err) {
+    console.error('Failed to create tray:', err);
+  }
 }
 
 // ─── Auto Clicker Engine (Windows native via user32 mouse_event) ──────────────
