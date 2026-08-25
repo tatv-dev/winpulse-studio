@@ -16,5 +16,8 @@
   "license": "MIT",
   "devDependencies": {
     "electron": "^29.0.0"
+  },
+  "dependencies": {
+    "uiohook-napi": "^1.5.5"
   }
 }

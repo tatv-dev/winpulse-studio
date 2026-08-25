@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, globalShortcut, clipboard, nativeTheme } = require('electron');
+const { uIOhook, UiohookKey } = require('uiohook-napi');
 const path = require('path');
 const fs = require('fs');
 
@@ -58,6 +59,30 @@ let tray = null;
 let statsData = loadData();
 let lastClipboardContent = '';
 let clipboardPollInterval = null;
+let ctrlPressed = false;
+
+// ─── Passive Global Input Monitor (uiohook) ───────────────────────────────────
+function setupGlobalInputHook() {
+  uIOhook.on('keydown', (e) => {
+    if (e.keycode === UiohookKey.Ctrl || e.keycode === UiohookKey.CtrlRight) {
+      ctrlPressed = true;
+    } else if (e.keycode === UiohookKey.V && ctrlPressed) {
+      recordPaste();
+    }
+  });
+
+  uIOhook.on('keyup', (e) => {
+    if (e.keycode === UiohookKey.Ctrl || e.keycode === UiohookKey.CtrlRight) {
+      ctrlPressed = false;
+    }
+  });
+
+  try {
+    uIOhook.start();
+  } catch (err) {
+    console.error('Failed to start uIOhook:', err);
+  }
+}
 
 // ─── Clipboard polling ────────────────────────────────────────────────────────
 function startClipboardMonitor() {
@@ -358,12 +383,14 @@ app.whenReady().then(() => {
   createWindow();
   createTray();
   startClipboardMonitor();
+  setupGlobalInputHook();
   registerAutoClickShortcut();
-
-
 });
 
 app.on('will-quit', () => {
+  try {
+    uIOhook.stop();
+  } catch (e) {}
   globalShortcut.unregisterAll();
   stopClipboardMonitor();
 });
