@@ -384,22 +384,6 @@ window.api.onTriggerAutoClickToggle(() => {
   toggleAutoClick();
 });
 
-// ─── Mouse Click & Scroll Tracking ───────────────────────────────────────────
-window.addEventListener('mousedown', (e) => {
-  if (e.button === 0) window.api.recordMouse('left');
-  else if (e.button === 2) window.api.recordMouse('right');
-  else if (e.button === 1) window.api.recordMouse('middle');
-});
-
-let lastScrollTime = 0;
-window.addEventListener('wheel', () => {
-  const now = Date.now();
-  if (now - lastScrollTime > 250) {
-    lastScrollTime = now;
-    window.api.recordMouse('scroll');
-  }
-}, { passive: true });
-
 // ─── Initial load ─────────────────────────────────────────────────────────────
 (async () => {
   setLanguage(currentLang);

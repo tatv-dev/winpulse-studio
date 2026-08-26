@@ -127,6 +127,18 @@ function setupGlobalInputHook() {
     }
   });
 
+  // Global mouse click tracking
+  uIOhook.on('mousedown', (e) => {
+    if (e.button === 1) recordMouseAction('left');
+    else if (e.button === 2) recordMouseAction('right');
+    else if (e.button === 3) recordMouseAction('middle');
+  });
+
+  // Global mouse wheel / scroll tracking
+  uIOhook.on('wheel', (e) => {
+    recordMouseAction('scroll');
+  });
+
   // Global mouse move for distance tracking
   uIOhook.on('mousemove', (e) => {
     if (lastMouseX !== null && lastMouseY !== null) {
