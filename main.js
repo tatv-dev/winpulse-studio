@@ -358,6 +358,10 @@ function computeAllTime() {
 
 // ─── Window ────────────────────────────────────────────────────────────────────
 function createWindow() {
+  const iconPath = path.join(__dirname, 'assets', 'icon.png');
+  const iconIcoPath = path.join(__dirname, 'assets', 'icon.ico');
+  const appIcon = fs.existsSync(iconIcoPath) ? nativeImage.createFromPath(iconIcoPath) : nativeImage.createFromPath(iconPath);
+
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 780,
@@ -371,12 +375,14 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
     },
-    icon: process.platform === 'win32'
-      ? path.join(__dirname, 'assets', 'icon.ico')
-      : path.join(__dirname, 'assets', 'icon.png'),
+    icon: appIcon,
     show: false,
     titleBarStyle: 'hidden',
   });
+
+  if (process.platform === 'win32' && appIcon) {
+    mainWindow.setIcon(appIcon);
+  }
 
   mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 
