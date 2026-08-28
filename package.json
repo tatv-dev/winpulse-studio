@@ -29,9 +29,7 @@
         "nsis",
         "portable"
       ],
-      "icon": "assets/icon.ico",
-      "signAndEditExecutable": false,
-      "forceCodeSigning": false
+      "icon": "assets/icon.ico"
     },
     "nsis": {
       "oneClick": false,

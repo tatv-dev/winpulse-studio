@@ -762,32 +762,50 @@ ipcMain.handle('get-autoclick-status', () => {
 ipcMain.handle('get-autoclick-hotkey', () => currentAutoClickHotkey);
 ipcMain.handle('set-autoclick-hotkey', (_e, key) => registerAutoClickShortcut(key));
 
-// ─── Windows Startup Shortcut Helper (.lnk in Startup folder) ────────────────
-const { execSync } = require('child_process');
+// ─── Windows Startup Shortcut Helper (.lnk in Startup folder & LoginItemSettings) ──
 const STARTUP_DIR = path.join(app.getPath('appData'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup');
 const SHORTCUT_PATH = path.join(STARTUP_DIR, 'WinPulse Studio.lnk');
 
 function getWindowsAutoStart() {
-  return fs.existsSync(SHORTCUT_PATH);
+  const settings = app.getLoginItemSettings();
+  return fs.existsSync(SHORTCUT_PATH) || settings.openAtLogin;
 }
 
 function setWindowsAutoStart(enable) {
   try {
+    // Also update Electron native login item settings
+    app.setLoginItemSettings({
+      openAtLogin: !!enable,
+      path: process.execPath,
+      args: app.isPackaged ? ['--hidden'] : [path.resolve('.')]
+    });
+
     if (enable) {
       const targetPath = process.execPath;
-      const targetArgs = app.isPackaged ? '--hidden' : path.resolve('.');
-      const iconPath = path.resolve('assets/icon.png');
-      const workingDir = path.resolve('.');
+      const targetArgs = app.isPackaged ? '--hidden' : `"${path.resolve('.')}"`;
+      const workingDir = app.isPackaged ? path.dirname(process.execPath) : path.resolve('.');
+      
+      // Determine best icon location
+      let iconLocation = path.join(__dirname, 'assets', 'icon.ico');
+      if (app.isPackaged) {
+        // In packaged app, the exe itself contains the embedded icon, or check resources
+        const embeddedIcon = path.join(process.resourcesPath, 'assets', 'icon.ico');
+        if (fs.existsSync(embeddedIcon)) {
+          iconLocation = embeddedIcon;
+        } else {
+          iconLocation = targetPath;
+        }
+      }
 
       const vbsFile = path.join(app.getPath('temp'), 'mk_winpulse_lnk.vbs');
       const vbs = [
         'Set WshShell = CreateObject("WScript.Shell")',
-        'Set Shortcut = WshShell.CreateShortcut("' + SHORTCUT_PATH + '")',
-        'Shortcut.TargetPath = "' + targetPath + '"',
-        'Shortcut.Arguments = "' + targetArgs + '"',
-        'Shortcut.WorkingDirectory = "' + workingDir + '"',
+        'Set Shortcut = WshShell.CreateShortcut("' + SHORTCUT_PATH.replace(/\\/g, '\\\\') + '")',
+        'Shortcut.TargetPath = "' + targetPath.replace(/\\/g, '\\\\') + '"',
+        'Shortcut.Arguments = "' + targetArgs.replace(/\\/g, '\\\\') + '"',
+        'Shortcut.WorkingDirectory = "' + workingDir.replace(/\\/g, '\\\\') + '"',
         'Shortcut.Description = "WinPulse Studio"',
-        'Shortcut.IconLocation = "' + iconPath + ',0"',
+        'Shortcut.IconLocation = "' + iconLocation.replace(/\\/g, '\\\\') + ',0"',
         'Shortcut.Save'
       ].join('\r\n');
 
@@ -795,19 +813,16 @@ function setWindowsAutoStart(enable) {
       execSync('cscript //nologo "' + vbsFile + '"');
       try { fs.unlinkSync(vbsFile); } catch (e) {}
 
-      // Remove any legacy registry entries
-      exec(`reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /v "WinPulse Studio" /f`, () => {});
       return true;
     } else {
       if (fs.existsSync(SHORTCUT_PATH)) {
         fs.unlinkSync(SHORTCUT_PATH);
       }
-      exec(`reg delete "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /v "WinPulse Studio" /f`, () => {});
       return false;
     }
   } catch (err) {
     console.error('Error setting auto start shortcut:', err);
-    return fs.existsSync(SHORTCUT_PATH);
+    return getWindowsAutoStart();
   }
 }
 
