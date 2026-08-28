@@ -10,7 +10,8 @@ const translations = {
     nav_autoclick: "Auto Click",
     nav_history: "Lịch sử",
     nav_settings: "Cài đặt",
-    live_tracking: "Live Tracking",
+    app_version_label: "Phiên bản",
+    app_author_label: "Tác giả",
 
     // Header
     dashboard_title: "Dashboard",
@@ -31,7 +32,7 @@ const translations = {
     chart_trend_badge: "7 ngày",
     chart_dist_title: "Tỷ trọng hôm nay",
     chart_mouse_title: "Chi tiết chuột & cuộn",
-    chart_ratio_title: "Tỷ lệ & Tổng số",
+    chart_summary_title: "Tổng hợp hoạt động",
     
     label_copy: "Copy",
     label_paste: "Paste",
@@ -43,9 +44,9 @@ const translations = {
     label_middle_click: "Chuột giữa",
     label_scroll_action: "Cuộn",
 
-    summary_cp_ratio: "Tỷ lệ Copy / Paste",
-    summary_no_cp: "Chưa có dữ liệu",
     summary_today_total: "Hôm nay",
+    summary_active_time: "Thời gian sử dụng",
+    summary_calories: "Ước tính tiêu hao",
     summary_alltime_total: "Toàn thời gian",
     no_data: "Không có dữ liệu",
 
@@ -140,7 +141,8 @@ const translations = {
     nav_autoclick: "Auto Click",
     nav_history: "History",
     nav_settings: "Settings",
-    live_tracking: "Live Tracking",
+    app_version_label: "Version",
+    app_author_label: "Author",
 
     // Header
     dashboard_title: "Dashboard",
@@ -161,7 +163,7 @@ const translations = {
     chart_trend_badge: "7 Days",
     chart_dist_title: "Today's Breakdown",
     chart_mouse_title: "Mouse & Scroll Breakdown",
-    chart_ratio_title: "Ratio & Totals",
+    chart_summary_title: "Activity Summary",
     
     label_copy: "Copy",
     label_paste: "Paste",
@@ -173,9 +175,9 @@ const translations = {
     label_middle_click: "Middle",
     label_scroll_action: "Scroll",
 
-    summary_cp_ratio: "Copy / Paste Ratio",
-    summary_no_cp: "No data",
     summary_today_total: "Today",
+    summary_active_time: "Active Screen Time",
+    summary_calories: "Est. Energy Burned",
     summary_alltime_total: "All-Time",
     no_data: "No data",
 

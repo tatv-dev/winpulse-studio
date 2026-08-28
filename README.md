@@ -8,7 +8,7 @@
 [![Electron](https://img.shields.io/badge/Electron-29.0.0-47848F.svg?logo=electron)](https://www.electronjs.org/)
 [![Status](https://img.shields.io/badge/Status-Active%20%7C%20Production-success.svg)](#)
 
-*A lightweight, privacy-first desktop telemetry engine designed to track daily keyboard & mouse interactions, calculate copy/paste productivity ratios, and deliver blazing-fast native auto-clicking for Windows.*
+*A lightweight, privacy-first desktop telemetry engine designed to track daily keyboard & mouse interactions and deliver blazing-fast native auto-clicking for Windows.*
 
 [Overview](#-overview) • [Key Features](#-key-features) • [Native Auto Clicker](#-native-auto-clicker) • [Architecture](#-architecture) • [Getting Started](#-getting-started) • [Building EXE](#-building-installer--portable-exe) • [Privacy & Security](#-privacy--security)
 
@@ -27,7 +27,8 @@ In addition to telemetry analysis, WinPulse Studio integrates a **Hardware-Level
 ## ✨ Key Features
 
 ### 📊 Real-Time Productivity Telemetry & Analytics
-- **Clipboard Dynamics**: Tracks daily `Ctrl+C` (Copy) and `Ctrl+V` (Paste) counts and automatically computes your daily **Copy/Paste Productivity Ratio**.
+- **Active Screen Time & Calorie Meter**: Real-time measurement of daily active computer engagement and estimated energetic expenditure (**kcal**).
+- **Clipboard Dynamics**: Tracks daily `Ctrl+C` (Copy) and `Ctrl+V` (Paste) counts with real-time counters and historical logs.
 - **Mouse Travel Distance Tracker**: Passive global Euclidean mouse movement calculation measuring daily distance in **Meters (m)** and **Kilometers (km)**.
 - **Interactive Multi-Action Charts**: Dynamic visualizations powered by Chart.js (7-Day Trends, Action Composition Doughnut, and Mouse Breakdown Horizontal Bar).
 - **Zero-Config History Log & Export**: Persistent daily historical tables with **1-click CSV / JSON Export** for Excel and long-term archiving.

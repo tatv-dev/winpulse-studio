@@ -2,6 +2,7 @@
   "name": "winpulse-studio",
   "version": "1.4.0",
   "description": "WinPulse Studio - Windows Productivity Metrics and Desktop Utilities",
+  "author": "Hexgy",
   "main": "main.js",
   "scripts": {
     "start": "electron .",

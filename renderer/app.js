@@ -430,20 +430,28 @@ function renderDashboard(data) {
   animateCount('today-scroll', scrollVal);
   animateCount('today-distance', distanceVal);
 
-  // Summary section
-  const clipTotal = copyVal + pasteVal;
-  const copyPct = clipTotal > 0 ? Math.round((copyVal / clipTotal) * 100) : 50;
-  const pastePct = clipTotal > 0 ? (100 - copyPct) : 50;
+  // Summary section (4-Metric Grid)
+  const todayTotalActionsEl = document.getElementById('total-today-actions');
+  if (todayTotalActionsEl) todayTotalActionsEl.textContent = todayTotal.toLocaleString();
 
-  document.getElementById('summary-ratio').textContent =
-    clipTotal > 0
-      ? `${copyVal} ${t('label_copy')} (${copyPct}%) / ${pasteVal} ${t('label_paste')} (${pastePct}%)`
-      : t('summary_no_cp');
-  document.getElementById('ratio-copy-bar').style.width = copyPct + '%';
-  document.getElementById('ratio-paste-bar').style.width = pastePct + '%';
+  const activeSec = today.activeSeconds || 0;
+  const activeHours = Math.floor(activeSec / 3600);
+  const activeMins = Math.floor((activeSec % 3600) / 60);
+  let activeTimeText = '';
+  if (activeHours > 0) {
+    activeTimeText = `${activeHours}h ${activeMins}m`;
+  } else {
+    activeTimeText = `${activeMins}m`;
+  }
+  const activeTimeEl = document.getElementById('today-active-time');
+  if (activeTimeEl) activeTimeEl.textContent = activeTimeText;
 
-  document.getElementById('total-today-actions').textContent = todayTotal.toLocaleString();
-  document.getElementById('total-alltime-actions').textContent = (allTime.totalActions || 0).toLocaleString();
+  const calVal = today.calories !== undefined ? today.calories : ((todayTotal * 0.0014) + (distanceVal * 0.0045) + ((activeSec / 3600) * 18));
+  const calEl = document.getElementById('today-calories');
+  if (calEl) calEl.textContent = Number(calVal).toFixed(1);
+
+  const alltimeTotalActionsEl = document.getElementById('total-alltime-actions');
+  if (alltimeTotalActionsEl) alltimeTotalActionsEl.textContent = (allTime.totalActions || 0).toLocaleString();
 
   // Render Chart.js Visualizations
   renderTrendChart(history);

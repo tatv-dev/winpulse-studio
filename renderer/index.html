@@ -24,7 +24,7 @@
         <img src="../assets/icon.png" alt="WinPulse Logo" style="width: 18px; height: 18px; border-radius: 4px; object-fit: cover; display: block;" />
       </div>
       <span class="app-title">WinPulse Studio</span>
-      <span class="app-version">v1.3</span>
+      <span class="app-version">v1.4.0</span>
     </div>
 
     <div class="titlebar-right-group">
@@ -69,9 +69,9 @@
       </button>
     </nav>
     <div class="sidebar-footer">
-      <div class="live-indicator">
-        <span class="dot pulse"></span>
-        <span data-i18n="live_tracking">Live Tracking</span>
+      <div class="sidebar-meta">
+        <div class="meta-version"><span data-i18n="app_version_label">Phiên bản</span> <span class="meta-ver-val">v1.4.0</span></div>
+        <div class="meta-author"><span data-i18n="app_author_label">Tác giả</span> <strong class="meta-author-val">Hexgy</strong></div>
       </div>
     </div>
   </aside>
@@ -81,15 +81,13 @@
 
     <!-- ── Page: Dashboard ── -->
     <section class="page active" id="page-dashboard">
-      <!-- Top header -->
-      <div class="page-header">
-        <div>
-          <h1 class="page-title" data-i18n="dashboard_title">Dashboard</h1>
-          <p class="page-subtitle" id="dash-date">Đang tải...</p>
-        </div>
+      <!-- Compact top header -->
+      <div class="page-header page-header-compact">
+        <h1 class="page-title" data-i18n="dashboard_title">Dashboard</h1>
+        <span class="page-subtitle-badge" id="dash-date">Đang tải...</span>
       </div>
 
-      <!-- Quick Metrics Ribbon: 5 Thẻ chỉ số chính hôm nay -->
+      <!-- Quick Metrics Ribbon: 4 Thẻ chỉ số chính hôm nay -->
       <div class="metrics-ribbon">
         <div class="metric-card card-copy">
           <div class="metric-icon-box copy-box">
@@ -118,16 +116,6 @@
           <div class="metric-info">
             <div class="metric-value" id="today-clicks">0</div>
             <div class="metric-title" data-i18n="metric_clicks">Click</div>
-          </div>
-        </div>
-
-        <div class="metric-card card-scroll">
-          <div class="metric-icon-box scroll-box">
-            <i data-lucide="chevrons-up-down" class="icon-md"></i>
-          </div>
-          <div class="metric-info">
-            <div class="metric-value" id="today-scroll">0</div>
-            <div class="metric-title" data-i18n="metric_scroll">Scroll</div>
           </div>
         </div>
 
@@ -187,30 +175,27 @@
           </div>
         </div>
 
-        <!-- Thống kê Tỷ lệ & Tích lũy -->
+        <!-- Thống kê Tổng hợp hoạt động & Sức khỏe -->
         <div class="chart-panel chart-panel-half summary-panel">
           <div class="panel-header">
             <div class="panel-title-wrap">
-              <i data-lucide="award" class="icon-sm text-amber"></i>
-              <h2 class="panel-title" data-i18n="chart_ratio_title">Tỷ lệ & Tổng số</h2>
+              <i data-lucide="flame" class="icon-sm text-amber"></i>
+              <h2 class="panel-title" data-i18n="chart_summary_title">Tổng hợp & Sức khỏe</h2>
             </div>
           </div>
           <div class="summary-body">
-            <div class="summary-stat-row">
-              <span class="summary-label" data-i18n="summary_cp_ratio">Tỷ lệ Copy / Paste</span>
-              <span class="summary-value" id="summary-ratio">—</span>
-            </div>
-            <div class="summary-progress-bar">
-              <div class="progress-bar-fill copy-fill" id="ratio-copy-bar" style="width: 50%"></div>
-              <div class="progress-bar-fill paste-fill" id="ratio-paste-bar" style="width: 50%"></div>
-            </div>
-
-            <div class="summary-divider"></div>
-
             <div class="summary-stat-grid">
               <div class="mini-stat-card">
                 <div class="mini-stat-num" id="total-today-actions">0</div>
                 <div class="mini-stat-text" data-i18n="summary_today_total">Hôm nay</div>
+              </div>
+              <div class="mini-stat-card">
+                <div class="mini-stat-num" id="today-active-time">0m</div>
+                <div class="mini-stat-text" data-i18n="summary_active_time">Thời gian sử dụng</div>
+              </div>
+              <div class="mini-stat-card">
+                <div class="mini-stat-num"><span id="today-calories">0.0</span> <span class="mini-stat-unit">kcal</span></div>
+                <div class="mini-stat-text" data-i18n="summary_calories">Ước tính tiêu hao</div>
               </div>
               <div class="mini-stat-card">
                 <div class="mini-stat-num" id="total-alltime-actions">0</div>

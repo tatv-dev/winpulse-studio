@@ -82,6 +82,8 @@ function getOrCreateToday(data) {
       scroll: 0,
       distancePx: 0,
       distanceMeters: 0,
+      activeSeconds: 0,
+      calories: 0,
     };
   }
   // Ensure fields exist for backward compatibility
@@ -93,7 +95,21 @@ function getOrCreateToday(data) {
   data[key].scroll = data[key].scroll || 0;
   data[key].distancePx = data[key].distancePx || 0;
   data[key].distanceMeters = data[key].distanceMeters || 0;
+  data[key].activeSeconds = data[key].activeSeconds || 0;
+  data[key].calories = data[key].calories !== undefined ? data[key].calories : computeCaloriesForDay(data[key]);
   return data[key];
+}
+
+function computeCaloriesForDay(day) {
+  const totalActions = (day.copy || 0) + (day.paste || 0) + (day.leftClick || 0) + (day.rightClick || 0) + (day.middleClick || 0) + (day.scroll || 0);
+  const distanceM = day.distanceMeters || 0;
+  const activeHours = (day.activeSeconds || 0) / 3600;
+  // MET-based telemetry model:
+  // Actions: ~0.0014 kcal per interaction
+  // Mouse movement: ~0.0045 kcal per meter
+  // Active screen engagement: ~18 kcal/hour active focus overhead above basal
+  const cal = (totalActions * 0.0014) + (distanceM * 0.0045) + (activeHours * 18);
+  return Number(cal.toFixed(1));
 }
 
 // ─── State ─────────────────────────────────────────────────────────────────────
@@ -111,9 +127,51 @@ let mouseDistanceBatchPx = 0;
 let lastDistanceSaveTime = Date.now();
 const METERS_PER_PIXEL = 0.0002645833; // standard ~96 DPI (1px ≈ 0.26458 mm)
 
+// Active interaction time tracking
+let lastUserActivityTime = Date.now();
+let activeSecondsBatch = 0;
+let lastActiveTimeFlush = Date.now();
+const IDLE_TIMEOUT_MS = 60000; // 60s idle threshold
+
+function touchUserActivity() {
+  const now = Date.now();
+  const diffSec = Math.floor((now - lastUserActivityTime) / 1000);
+  if (diffSec > 0 && diffSec <= 60) {
+    activeSecondsBatch += diffSec;
+  } else if (diffSec > 60) {
+    // Resumed after idle: count just 1 second for the new action
+    activeSecondsBatch += 1;
+  }
+  lastUserActivityTime = now;
+
+  if (now - lastActiveTimeFlush >= 5000 && activeSecondsBatch > 0) {
+    flushActiveTime();
+  }
+}
+
+function flushActiveTime() {
+  if (activeSecondsBatch <= 0) return;
+  const today = getOrCreateToday(statsData);
+  today.activeSeconds = (today.activeSeconds || 0) + activeSecondsBatch;
+  today.calories = computeCaloriesForDay(today);
+  activeSecondsBatch = 0;
+  lastActiveTimeFlush = Date.now();
+  saveData(statsData);
+  broadcastStats();
+}
+
+// Periodic check to flush active time and handle idle state transition
+setInterval(() => {
+  const now = Date.now();
+  if (now - lastUserActivityTime <= IDLE_TIMEOUT_MS && activeSecondsBatch > 0) {
+    flushActiveTime();
+  }
+}, 5000);
+
 // ─── Passive Global Input Monitor (uiohook) ───────────────────────────────────
 function setupGlobalInputHook() {
   uIOhook.on('keydown', (e) => {
+    touchUserActivity();
     if (e.keycode === UiohookKey.Ctrl || e.keycode === UiohookKey.CtrlRight) {
       ctrlPressed = true;
     } else if (e.keycode === UiohookKey.V && ctrlPressed) {
@@ -122,6 +180,7 @@ function setupGlobalInputHook() {
   });
 
   uIOhook.on('keyup', (e) => {
+    touchUserActivity();
     if (e.keycode === UiohookKey.Ctrl || e.keycode === UiohookKey.CtrlRight) {
       ctrlPressed = false;
     }
@@ -129,6 +188,7 @@ function setupGlobalInputHook() {
 
   // Global mouse click tracking
   uIOhook.on('mousedown', (e) => {
+    touchUserActivity();
     if (e.button === 1) recordMouseAction('left');
     else if (e.button === 2) recordMouseAction('right');
     else if (e.button === 3) recordMouseAction('middle');
@@ -136,11 +196,13 @@ function setupGlobalInputHook() {
 
   // Global mouse wheel / scroll tracking
   uIOhook.on('wheel', (e) => {
+    touchUserActivity();
     recordMouseAction('scroll');
   });
 
   // Global mouse move for distance tracking
   uIOhook.on('mousemove', (e) => {
+    touchUserActivity();
     if (lastMouseX !== null && lastMouseY !== null) {
       const dx = e.x - lastMouseX;
       const dy = e.y - lastMouseY;
@@ -259,6 +321,8 @@ function buildStatsPayload() {
       scroll: dayData.scroll || 0,
       distancePx: dayData.distancePx || 0,
       distanceMeters: dayData.distanceMeters || 0,
+      activeSeconds: dayData.activeSeconds || 0,
+      calories: dayData.calories !== undefined ? dayData.calories : computeCaloriesForDay(dayData),
     });
   }
   return { today, history, allTime: computeAllTime() };
@@ -266,6 +330,7 @@ function buildStatsPayload() {
 
 function computeAllTime() {
   let totalCopy = 0, totalPaste = 0, totalLeft = 0, totalRight = 0, totalMiddle = 0, totalScroll = 0, totalMeters = 0;
+  let totalActiveSeconds = 0, totalCalories = 0;
   for (const day of Object.values(statsData)) {
     totalCopy += day.copy || 0;
     totalPaste += day.paste || 0;
@@ -274,6 +339,8 @@ function computeAllTime() {
     totalMiddle += day.middleClick || 0;
     totalScroll += day.scroll || 0;
     totalMeters += day.distanceMeters || 0;
+    totalActiveSeconds += day.activeSeconds || 0;
+    totalCalories += day.calories !== undefined ? day.calories : computeCaloriesForDay(day);
   }
   return {
     copy: totalCopy,
@@ -283,6 +350,8 @@ function computeAllTime() {
     middleClick: totalMiddle,
     scroll: totalScroll,
     distanceMeters: Number(totalMeters.toFixed(1)),
+    activeSeconds: totalActiveSeconds,
+    calories: Number(totalCalories.toFixed(1)),
     totalActions: totalCopy + totalPaste + totalLeft + totalRight + totalMiddle + totalScroll,
   };
 }
@@ -290,10 +359,10 @@ function computeAllTime() {
 // ─── Window ────────────────────────────────────────────────────────────────────
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 980,
-    height: 690,
-    minWidth: 860,
-    minHeight: 580,
+    width: 1000,
+    height: 780,
+    minWidth: 880,
+    minHeight: 650,
     frame: false,
     transparent: false,
     backgroundColor: '#f8fafc',
@@ -561,7 +630,7 @@ async function handleExportData(format) {
     if (format === 'json') {
       fs.writeFileSync(filePath, JSON.stringify(statsData, null, 2), 'utf-8');
     } else if (format === 'csv') {
-      const headers = ['Date', 'Copy', 'Paste', 'LeftClick', 'RightClick', 'MiddleClick', 'Scroll', 'Distance_Meters', 'TotalActions'];
+      const headers = ['Date', 'Copy', 'Paste', 'LeftClick', 'RightClick', 'MiddleClick', 'Scroll', 'Distance_Meters', 'Active_Minutes', 'Calories_kcal', 'TotalActions'];
       const rows = [headers.join(',')];
       const sortedKeys = Object.keys(statsData).sort().reverse();
       for (const key of sortedKeys) {
@@ -573,8 +642,10 @@ async function handleExportData(format) {
         const middle = d.middleClick || 0;
         const scroll = d.scroll || 0;
         const dist = d.distanceMeters || 0;
+        const activeMins = Number(((d.activeSeconds || 0) / 60).toFixed(1));
+        const cal = d.calories !== undefined ? d.calories : computeCaloriesForDay(d);
         const total = copy + paste + left + right + middle + scroll;
-        rows.push([key, copy, paste, left, right, middle, scroll, dist, total].join(','));
+        rows.push([key, copy, paste, left, right, middle, scroll, dist, activeMins, cal, total].join(','));
       }
       fs.writeFileSync(filePath, rows.join('\n'), 'utf-8');
     }
