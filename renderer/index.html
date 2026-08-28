@@ -209,36 +209,35 @@
 
     <!-- ── Page: Auto Click ── -->
     <section class="page" id="page-autoclick">
-      <div class="page-header">
-        <div>
-          <h1 class="page-title" data-i18n="autoclick_title">Auto Clicker</h1>
-          <p class="page-subtitle" data-i18n="autoclick_subtitle">Tốc độ, phím chuột & phím tắt</p>
+      <div class="page-header page-header-compact">
+        <h1 class="page-title" data-i18n="autoclick_title">Auto Clicker</h1>
+        <div class="ac-header-status">
+          <span class="ac-pulse-dot" id="ac-pulse-dot"></span>
+          <span class="ac-status-text" id="ac-status-text" data-i18n="ac_status_stopped">Sẵn sàng</span>
         </div>
       </div>
 
       <div class="autoclick-container">
-        <!-- Status Banner -->
-        <div class="autoclick-banner" id="ac-status-banner">
-          <div class="ac-status-left">
-            <div class="ac-pulse-dot" id="ac-pulse-dot"></div>
-            <div>
-              <div class="ac-status-text" id="ac-status-text" data-i18n="ac_status_stopped">Sẵn sàng</div>
-              <div class="ac-status-sub" data-i18n="ac_hotkey_hint">Hotkey: F6 (Start / Stop)</div>
-            </div>
-          </div>
-          <div class="ac-counter-box">
-            <span class="ac-counter-label" data-i18n="ac_clicks_done">Đã click:</span>
-            <span class="ac-counter-value" id="ac-count-display">0</span>
-          </div>
-        </div>
-
-        <!-- Controls Card Grid -->
+        <!-- Main Configuration Grid -->
         <div class="autoclick-grid">
+          <!-- Left Column: Core Click Settings -->
           <div class="ac-card">
-            <!-- Interval Option with Stepper & Presets -->
+            <div class="ac-card-header">
+              <i data-lucide="sliders" class="icon-sm text-primary"></i>
+              <span class="ac-card-title">Cấu hình nhấp chuột</span>
+            </div>
+
+            <!-- Interval Section -->
             <div class="form-group">
-              <label class="form-label" data-i18n="ac_interval_label">Khoảng cách (Interval):</label>
-              
+              <div class="form-label-row">
+                <label class="form-label" data-i18n="ac_interval_label">Tốc độ (Interval):</label>
+                <div class="speed-presets">
+                  <button type="button" class="preset-chip" data-val="20">20ms</button>
+                  <button type="button" class="preset-chip active" data-val="100">100ms</button>
+                  <button type="button" class="preset-chip" data-val="500">500ms</button>
+                  <button type="button" class="preset-chip" data-val="1000">1s</button>
+                </div>
+              </div>
               <div class="stepper-input-group">
                 <input type="number" id="ac-interval" class="stepper-input" value="100" min="10" max="60000" step="10" />
                 <span class="stepper-unit">ms</span>
@@ -251,26 +250,36 @@
                   </button>
                 </div>
               </div>
+            </div>
 
-              <!-- Speed Presets Quick Buttons -->
-              <div class="speed-presets">
-                <span class="presets-label" data-i18n="ac_presets_label">Gợi ý:</span>
-                <button type="button" class="preset-chip" data-val="20">20ms (50 cps)</button>
-                <button type="button" class="preset-chip active" data-val="100">100ms (10 cps)</button>
-                <button type="button" class="preset-chip" data-val="500">500ms (2 cps)</button>
-                <button type="button" class="preset-chip" data-val="1000">1s (1 cps)</button>
+            <!-- Mouse Button Selection -->
+            <div class="form-group">
+              <label class="form-label" data-i18n="ac_button_label">Nút chuột:</label>
+              <div class="segmented-control">
+                <label class="segment-item active">
+                  <input type="radio" name="ac-button" value="left" checked />
+                  <span data-i18n="ac_btn_left">Trái (Left)</span>
+                </label>
+                <label class="segment-item">
+                  <input type="radio" name="ac-button" value="right" />
+                  <span data-i18n="ac_btn_right">Phải (Right)</span>
+                </label>
+                <label class="segment-item">
+                  <input type="radio" name="ac-button" value="middle" />
+                  <span data-i18n="ac_btn_middle">Giữa (Middle)</span>
+                </label>
               </div>
             </div>
 
-            <!-- Click Position: Current Cursor vs Fixed Coordinates -->
+            <!-- Position Mode -->
             <div class="form-group">
               <label class="form-label" data-i18n="ac_pos_label">Vị trí Click:</label>
-              <div class="pos-options-box">
-                <label class="pos-option-row active" id="pos-row-cursor">
+              <div class="segmented-control">
+                <label class="segment-item active" id="pos-row-cursor">
                   <input type="radio" name="ac-pos-type" value="cursor" checked />
-                  <span data-i18n="ac_pos_cursor">Vị trí con trỏ chuột</span>
+                  <span data-i18n="ac_pos_cursor">Con trỏ chuột</span>
                 </label>
-                <label class="pos-option-row" id="pos-row-fixed">
+                <label class="segment-item" id="pos-row-fixed">
                   <input type="radio" name="ac-pos-type" value="fixed" />
                   <span data-i18n="ac_pos_fixed">Tọa độ cố định</span>
                 </label>
@@ -280,73 +289,37 @@
               <div class="fixed-coord-wrap hidden" id="fixed-coord-panel">
                 <div class="coord-inputs">
                   <div class="coord-field">
-                    <span class="coord-tag">X:</span>
+                    <span class="coord-tag">X</span>
                     <input type="number" id="ac-pos-x" class="coord-input" value="500" />
                   </div>
                   <div class="coord-field">
-                    <span class="coord-tag">Y:</span>
+                    <span class="coord-tag">Y</span>
                     <input type="number" id="ac-pos-y" class="coord-input" value="500" />
                   </div>
                 </div>
-                <button type="button" class="btn btn-outline btn-sm" id="btn-pick-coord" title="Nhấn F7 hoặc nút này để lấy tọa độ chuột">
+                <button type="button" class="btn btn-outline btn-sm" id="btn-pick-coord" title="Nhấn F7 hoặc click để lấy tọa độ">
                   <i data-lucide="crosshair" class="icon-xs"></i>
-                  <span data-i18n="ac_pick_coord_btn">Bắt tọa độ (F7)</span>
+                  <span data-i18n="ac_pick_coord_btn">Lấy tọa độ (F7)</span>
                 </button>
               </div>
             </div>
 
-            <!-- Random Jitter (Anti-Bot) Toggle -->
-            <div class="form-group">
-              <div class="checkbox-row">
-                <label class="custom-checkbox-wrap">
-                  <input type="checkbox" id="ac-use-jitter" />
-                  <span class="checkbox-box"></span>
-                  <div class="checkbox-text">
-                    <span class="checkbox-title" data-i18n="ac_jitter_label">Random Jitter (Chống Bot):</span>
-                    <span class="checkbox-sub" data-i18n="ac_jitter_desc">Dao động ngẫu nhiên ±15% thời gian click</span>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <!-- Mouse Button Option -->
-            <div class="form-group">
-              <label class="form-label" data-i18n="ac_button_label">Nút chuột:</label>
-              <div class="radio-cards">
-                <label class="radio-card active">
-                  <input type="radio" name="ac-button" value="left" checked />
-                  <div class="rc-icon"><i data-lucide="mouse" class="icon-sm"></i></div>
-                  <span data-i18n="ac_btn_left">Trái (Left)</span>
-                </label>
-                <label class="radio-card">
-                  <input type="radio" name="ac-button" value="right" />
-                  <div class="rc-icon"><i data-lucide="mouse-pointer-click" class="icon-sm"></i></div>
-                  <span data-i18n="ac_btn_right">Phải (Right)</span>
-                </label>
-                <label class="radio-card">
-                  <input type="radio" name="ac-button" value="middle" />
-                  <div class="rc-icon"><i data-lucide="disc" class="icon-sm"></i></div>
-                  <span data-i18n="ac_btn_middle">Giữa (Middle)</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Repeat Type Option -->
+            <!-- Repeat Type -->
             <div class="form-group">
               <label class="form-label" data-i18n="ac_repeat_label">Số lần lặp:</label>
-              <div class="repeat-options-box">
+              <div class="repeat-row-box">
                 <label class="repeat-row active" id="repeat-row-infinite">
                   <input type="radio" name="ac-repeat-type" value="infinite" checked />
-                  <div class="repeat-row-content">
-                    <span class="repeat-title" data-i18n="ac_repeat_infinite">Vô hạn (Infinite)</span>
-                  </div>
+                  <span class="custom-radio-dot"></span>
+                  <span class="repeat-title" data-i18n="ac_repeat_infinite">Vô hạn (Không dừng)</span>
                 </label>
                 <label class="repeat-row" id="repeat-row-custom">
                   <input type="radio" name="ac-repeat-type" value="custom" />
-                  <div class="repeat-row-content">
+                  <span class="custom-radio-dot"></span>
+                  <div class="repeat-custom-wrap">
                     <span class="repeat-title" data-i18n="ac_repeat_count">Giới hạn:</span>
                     <div class="stepper-input-group stepper-input-group-sm">
-                      <input type="number" id="ac-repeat-count" class="stepper-input" value="500" min="1" disabled />
+                      <input type="number" id="ac-repeat-count" class="stepper-input" value="100" min="1" disabled />
                       <span class="stepper-unit" data-i18n="unit_times">lần</span>
                     </div>
                   </div>
@@ -354,53 +327,68 @@
               </div>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="ac-action-row">
-              <button class="btn btn-primary btn-lg" id="btn-toggle-autoclick">
+            <!-- Anti-bot Jitter Toggle -->
+            <div class="form-group">
+              <label class="toggle-option-card">
+                <div class="toggle-option-info">
+                  <span class="toggle-option-title" data-i18n="ac_jitter_label">Random Jitter (Chống Bot)</span>
+                  <span class="toggle-option-desc" data-i18n="ac_jitter_desc">Dao động ngẫu nhiên ±15% nhịp click</span>
+                </div>
+                <input type="checkbox" id="ac-use-jitter" class="toggle-checkbox" />
+                <span class="toggle-switch-ui"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Right Column: Control & Hotkey -->
+          <div class="ac-side-col">
+            <!-- Big Action Card -->
+            <div class="ac-card ac-action-card">
+              <div class="ac-action-top">
+                <div class="ac-counter-meta">
+                  <span class="ac-counter-label" data-i18n="ac_clicks_done">Đã thực hiện:</span>
+                  <span class="ac-counter-value" id="ac-count-display">0</span>
+                </div>
+              </div>
+              <button class="btn btn-primary btn-action-big" id="btn-toggle-autoclick">
                 <i data-lucide="play" class="icon-md" id="ac-btn-icon"></i>
                 <span id="ac-btn-text" data-i18n="ac_btn_start">Bắt đầu (F6)</span>
               </button>
             </div>
-          </div>
 
-          <!-- Hotkey Setup Card -->
-          <div class="ac-hotkey-card">
-            <div class="ac-hotkey-header">
-              <i data-lucide="keyboard" class="icon-md text-primary"></i>
-              <div>
-                <h3 class="ac-hotkey-title" data-i18n="ac_hotkey_card_title">Phím tắt (Hotkey)</h3>
-                <p class="ac-hotkey-subtitle" data-i18n="ac_hotkey_card_desc">Kích hoạt toàn hệ thống</p>
-              </div>
-            </div>
-
-            <div class="hotkey-setup-body">
-              <div class="form-group">
-                <label class="form-label" data-i18n="ac_current_hotkey_label">Hotkey hiện tại:</label>
-                <div class="hotkey-current-display">
-                  <span class="hotkey-badge-large" id="current-hotkey-badge">F6</span>
-                  <span class="hotkey-active-tag" data-i18n="badge_active">Active</span>
-                </div>
+            <!-- Hotkey Settings Card -->
+            <div class="ac-card">
+              <div class="ac-card-header">
+                <i data-lucide="keyboard" class="icon-sm text-primary"></i>
+                <span class="ac-card-title" data-i18n="ac_hotkey_card_title">Phím tắt (Hotkey)</span>
               </div>
 
-              <div class="form-group">
-                <label class="form-label" data-i18n="ac_choose_hotkey_label">Phím nhanh (Quick):</label>
-                <div class="hotkey-quick-grid">
-                  <button type="button" class="hotkey-quick-btn" data-key="F6">F6</button>
-                  <button type="button" class="hotkey-quick-btn" data-key="F8">F8</button>
-                  <button type="button" class="hotkey-quick-btn" data-key="F9">F9</button>
-                  <button type="button" class="hotkey-quick-btn" data-key="F10">F10</button>
-                  <button type="button" class="hotkey-quick-btn" data-key="F11">F11</button>
-                  <button type="button" class="hotkey-quick-btn" data-key="F12">F12</button>
+              <div class="hotkey-body">
+                <div class="hotkey-current-bar">
+                  <span class="hotkey-sublabel" data-i18n="ac_current_hotkey_label">Đang gán:</span>
+                  <span class="hotkey-badge-clean" id="current-hotkey-badge">F6</span>
                 </div>
-              </div>
 
-              <div class="form-group">
-                <label class="form-label" data-i18n="ac_custom_hotkey_label">Tùy chỉnh (Custom):</label>
-                <div class="hotkey-custom-input-row">
-                  <input type="text" id="custom-hotkey-input" class="hotkey-input" data-i18n-placeholder="hotkey_press_key_hint" placeholder="Nhấn phím bất kỳ..." readonly />
-                  <button type="button" class="btn btn-secondary btn-sm" id="btn-save-hotkey" data-i18n="btn_save_hotkey">Lưu</button>
+                <div class="form-group">
+                  <label class="form-label-sub" data-i18n="ac_choose_hotkey_label">Chọn nhanh:</label>
+                  <div class="hotkey-chip-grid">
+                    <button type="button" class="hotkey-chip" data-key="F6">F6</button>
+                    <button type="button" class="hotkey-chip" data-key="F8">F8</button>
+                    <button type="button" class="hotkey-chip" data-key="F9">F9</button>
+                    <button type="button" class="hotkey-chip" data-key="F10">F10</button>
+                    <button type="button" class="hotkey-chip" data-key="F11">F11</button>
+                    <button type="button" class="hotkey-chip" data-key="F12">F12</button>
+                  </div>
                 </div>
-                <div class="hotkey-status-msg" id="hotkey-status-msg"></div>
+
+                <div class="form-group">
+                  <label class="form-label-sub" data-i18n="ac_custom_hotkey_label">Tự đặt phím:</label>
+                  <div class="hotkey-custom-group">
+                    <input type="text" id="custom-hotkey-input" class="hotkey-input-clean" data-i18n-placeholder="hotkey_press_key_hint" placeholder="Nhấn phím..." readonly />
+                    <button type="button" class="btn btn-outline btn-sm" id="btn-save-hotkey" data-i18n="btn_save_hotkey">Lưu</button>
+                  </div>
+                  <div class="hotkey-status-msg" id="hotkey-status-msg"></div>
+                </div>
               </div>
             </div>
           </div>

@@ -473,15 +473,70 @@ function createTray() {
   }
 }
 
-// ─── Auto Clicker Engine (Windows Native user32 mouse_event + SetCursorPos) ────
+// ─── Auto Clicker Engine (Windows Native user32 mouse_event via Persistent Worker) ────
 let autoClickTimeout = null;
 let isAutoClicking = false;
-const { exec } = require('child_process');
+let clickerWorker = null;
+const { spawn } = require('child_process');
+
+function ensureClickerWorker() {
+  if (clickerWorker && !clickerWorker.killed) return clickerWorker;
+
+  const scriptContent = `
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public class W32Mouse {
+    [DllImport("user32.dll")]
+    public static extern void mouse_event(int flags, int dx, int dy, int cButtons, int extraInfo);
+    [DllImport("user32.dll")]
+    public static extern bool SetCursorPos(int X, int Y);
+}
+"@
+while ($true) {
+    $line = [Console]::In.ReadLine()
+    if ($null -eq $line -or $line -eq "exit") { break }
+    $parts = $line.Split(' ')
+    if ($parts[0] -eq "click") {
+        $down = [int]$parts[1]
+        $up = [int]$parts[2]
+        if ($parts.Length -ge 5 -and $parts[3] -eq "pos") {
+            [W32Mouse]::SetCursorPos([int]$parts[4], [int]$parts[5])
+        }
+        [W32Mouse]::mouse_event($down, 0, 0, 0, 0)
+        [W32Mouse]::mouse_event($up, 0, 0, 0, 0)
+    }
+}
+`;
+
+  try {
+    const workerScriptPath = path.join(DATA_DIR, 'clicker_worker.ps1');
+    fs.writeFileSync(workerScriptPath, scriptContent.trim(), 'utf-8');
+
+    clickerWorker = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', workerScriptPath], {
+      windowsHide: true,
+      stdio: ['pipe', 'ignore', 'ignore']
+    });
+
+    clickerWorker.on('error', (err) => {
+      console.error('Clicker worker error:', err);
+      clickerWorker = null;
+    });
+
+    clickerWorker.on('exit', () => {
+      clickerWorker = null;
+    });
+  } catch (err) {
+    console.error('Failed to start native clicker worker:', err);
+  }
+
+  return clickerWorker;
+}
 
 function startNativeAutoClick(options) {
   if (isAutoClicking) return;
   const baseInterval = Math.max(Number(options.interval) || 100, 10);
-  const clickType = options.clickType || 'left'; // 'left', 'right', 'middle', 'double'
+  const clickType = options.clickType || 'left';
   const repeatCount = Number(options.repeatCount) || 0; // 0 = infinite
   const useFixedPos = !!options.useFixedPos;
   const posX = Number(options.posX) || 0;
@@ -489,39 +544,63 @@ function startNativeAutoClick(options) {
   const useJitter = !!options.useJitter;
   let executedCount = 0;
 
+  // Initialize persistent worker
+  const worker = ensureClickerWorker();
+  if (!worker || !worker.stdin) {
+    console.error('Auto clicker worker is unavailable');
+    return;
+  }
+
   isAutoClicking = true;
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('autoclick-status', { running: true, count: executedCount });
   }
 
   // Windows mouse_event flags:
-  // LEFTDOWN = 0x02, LEFTUP = 0x04
-  // RIGHTDOWN = 0x08, RIGHTUP = 0x10
-  // MIDDLEDOWN = 0x20, MIDDLEUP = 0x40
-  let dwDown = '0x02';
-  let dwUp = '0x04';
+  // LEFTDOWN = 0x02 (2), LEFTUP = 0x04 (4)
+  // RIGHTDOWN = 0x08 (8), RIGHTUP = 0x10 (16)
+  // MIDDLEDOWN = 0x20 (32), MIDDLEUP = 0x40 (64)
+  let dwDown = 2;
+  let dwUp = 4;
   if (clickType === 'right') {
-    dwDown = '0x08';
-    dwUp = '0x10';
+    dwDown = 8;
+    dwUp = 16;
   } else if (clickType === 'middle') {
-    dwDown = '0x20';
-    dwUp = '0x40';
+    dwDown = 32;
+    dwUp = 64;
   }
 
-  const scriptParts = [
-    `Add-Type -MemberDefinition '[DllImport("user32.dll")] public static extern void mouse_event(int flags, int dx, int dy, int cButtons, int extraInfo); [DllImport("user32.dll")] public static extern bool SetCursorPos(int X, int Y);' -Name U32 -Namespace Win32;`
-  ];
-  if (useFixedPos) {
-    scriptParts.push(`[Win32.U32]::SetCursorPos(${posX}, ${posY});`);
-  }
-  scriptParts.push(`[Win32.U32]::mouse_event(${dwDown}, 0, 0, 0, 0);`);
-  scriptParts.push(`[Win32.U32]::mouse_event(${dwUp}, 0, 0, 0, 0);`);
-  const triggerClickScript = scriptParts.join(' ');
-
-  function scheduleNextClick() {
+  function performClick() {
     if (!isAutoClicking) return;
 
-    // Calculate interval with random jitter (±15% variation)
+    try {
+      if (clickerWorker && clickerWorker.stdin && !clickerWorker.killed) {
+        if (useFixedPos) {
+          clickerWorker.stdin.write(`click ${dwDown} ${dwUp} pos ${posX} ${posY}\n`);
+        } else {
+          clickerWorker.stdin.write(`click ${dwDown} ${dwUp}\n`);
+        }
+      }
+    } catch (e) {
+      console.error('Error dispatching click to worker:', e);
+    }
+
+    // Record stats
+    if (clickType === 'left' || clickType === 'double') recordMouseAction('left');
+    else if (clickType === 'right') recordMouseAction('right');
+    else if (clickType === 'middle') recordMouseAction('middle');
+
+    executedCount++;
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('autoclick-status', { running: true, count: executedCount });
+    }
+
+    if (repeatCount > 0 && executedCount >= repeatCount) {
+      stopNativeAutoClick();
+      return;
+    }
+
+    // Schedule next iteration with optional random jitter
     let currentDelay = baseInterval;
     if (useJitter && baseInterval >= 20) {
       const jitterRange = Math.round(baseInterval * 0.15);
@@ -529,32 +608,10 @@ function startNativeAutoClick(options) {
       currentDelay = Math.max(10, baseInterval + randomOffset);
     }
 
-    autoClickTimeout = setTimeout(() => {
-      if (!isAutoClicking) return;
-
-      exec(`powershell -NoProfile -NonInteractive -Command "${triggerClickScript}"`, (err) => {
-        if (err) return;
-      });
-
-      // Record stats
-      if (clickType === 'left' || clickType === 'double') recordMouseAction('left');
-      else if (clickType === 'right') recordMouseAction('right');
-      else if (clickType === 'middle') recordMouseAction('middle');
-
-      executedCount++;
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('autoclick-status', { running: true, count: executedCount });
-      }
-
-      if (repeatCount > 0 && executedCount >= repeatCount) {
-        stopNativeAutoClick();
-      } else {
-        scheduleNextClick();
-      }
-    }, currentDelay);
+    autoClickTimeout = setTimeout(performClick, currentDelay);
   }
 
-  scheduleNextClick();
+  performClick();
 }
 
 function stopNativeAutoClick() {
@@ -567,6 +624,16 @@ function stopNativeAutoClick() {
     mainWindow.webContents.send('autoclick-status', { running: false });
   }
 }
+
+// Clean up worker on app quit
+app.on('before-quit', () => {
+  if (clickerWorker && !clickerWorker.killed) {
+    try {
+      clickerWorker.stdin.write('exit\n');
+      clickerWorker.kill();
+    } catch (e) {}
+  }
+});
 
 // Global hotkeys
 let currentAutoClickHotkey = 'F6';
@@ -666,6 +733,10 @@ ipcMain.handle('record-paste', () => {
 ipcMain.handle('record-mouse', (_e, type) => {
   recordMouseAction(type);
   return buildStatsPayload();
+});
+
+ipcMain.handle('get-cursor-pos', () => {
+  return screen.getCursorScreenPoint();
 });
 
 ipcMain.handle('start-autoclick', (_e, options) => {
@@ -800,6 +871,8 @@ ipcMain.on('window-quit', () => {
 // ─── App lifecycle ─────────────────────────────────────────────────────────────
 app.whenReady().then(() => {
   nativeTheme.themeSource = 'light';
+  ensureDataDir();
+  ensureClickerWorker();
   createWindow();
   createTray();
   startClipboardMonitor();

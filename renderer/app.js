@@ -179,17 +179,6 @@ document.querySelectorAll('.repeat-row').forEach(row => {
 // Toggle Start / Stop
 document.getElementById('btn-toggle-autoclick')?.addEventListener('click', toggleAutoClick);
 
-// Position radio toggle (Cursor vs Fixed)
-document.querySelectorAll('input[name="ac-pos-type"]').forEach(radio => {
-  radio.addEventListener('change', () => {
-    const isFixed = radio.value === 'fixed';
-    document.getElementById('pos-row-cursor')?.classList.toggle('active', !isFixed);
-    document.getElementById('pos-row-fixed')?.classList.toggle('active', isFixed);
-    const panel = document.getElementById('fixed-coord-panel');
-    if (panel) panel.classList.toggle('hidden', !isFixed);
-  });
-});
-
 // Pick coordinate button & global event
 document.getElementById('btn-pick-coord')?.addEventListener('click', async () => {
   const pos = await window.api.getCursorPos();
@@ -239,6 +228,25 @@ async function toggleAutoClick() {
   }
 }
 
+// Segmented Control (Mouse button & Position)
+document.querySelectorAll('.segmented-control input[type="radio"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const parent = radio.closest('.segmented-control');
+    if (parent) {
+      parent.querySelectorAll('.segment-item').forEach(item => item.classList.remove('active'));
+    }
+    const label = radio.closest('.segment-item');
+    if (label) label.classList.add('active');
+
+    // Handle position panel toggle
+    if (radio.name === 'ac-pos-type') {
+      const isFixed = radio.value === 'fixed';
+      const panel = document.getElementById('fixed-coord-panel');
+      if (panel) panel.classList.toggle('hidden', !isFixed);
+    }
+  });
+});
+
 // Update Auto Clicker UI elements
 function updateAutoClickUI(running, count = 0) {
   isAutoClickRunning = running;
@@ -257,7 +265,7 @@ function updateAutoClickUI(running, count = 0) {
   }
 
   // Update quick hotkey buttons active state
-  document.querySelectorAll('.hotkey-quick-btn').forEach(qb => {
+  document.querySelectorAll('.hotkey-chip, .hotkey-quick-btn').forEach(qb => {
     qb.classList.toggle('active', qb.dataset.key === currentAutoClickKey);
   });
 
@@ -269,7 +277,7 @@ function updateAutoClickUI(running, count = 0) {
     if (statusText) statusText.textContent = t('ac_status_running');
     if (pulseDot) pulseDot.classList.add('running');
     if (btn) {
-      btn.className = 'btn btn-danger btn-lg';
+      btn.className = 'btn btn-danger btn-action-big';
     }
     if (btnText) btnText.textContent = t('ac_btn_stop').replace('{key}', currentAutoClickKey);
     if (btnIcon) btnIcon.setAttribute('data-lucide', 'square');
@@ -277,7 +285,7 @@ function updateAutoClickUI(running, count = 0) {
     if (statusText) statusText.textContent = t('ac_status_stopped');
     if (pulseDot) pulseDot.classList.remove('running');
     if (btn) {
-      btn.className = 'btn btn-primary btn-lg';
+      btn.className = 'btn btn-primary btn-action-big';
     }
     if (btnText) btnText.textContent = t('ac_btn_start').replace('{key}', currentAutoClickKey);
     if (btnIcon) btnIcon.setAttribute('data-lucide', 'play');
@@ -308,7 +316,7 @@ async function applyAutoClickHotkey(key) {
 }
 
 // Quick hotkey buttons click
-document.querySelectorAll('.hotkey-quick-btn').forEach(btn => {
+document.querySelectorAll('.hotkey-chip, .hotkey-quick-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const key = btn.dataset.key;
     applyAutoClickHotkey(key);
