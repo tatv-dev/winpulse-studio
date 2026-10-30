@@ -861,7 +861,7 @@ ipcMain.handle('export-data', (_e, format) => handleExportData(format));
 
 // ─── PDF to Word (DOCX) Converter Engine ──────────────────────────────────────
 const pdfParse = require('pdf-parse-fork');
-const { Document, Packer, Paragraph, TextRun, HeadingLevel, ImageRun } = require('docx');
+const { Document, Packer, Paragraph, TextRun, HeadingLevel, ImageRun, AlignmentType } = require('docx');
 
 ipcMain.handle('select-pdf-file', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
@@ -995,14 +995,34 @@ ipcMain.handle('convert-pdf-to-word', async (_e, inputPath, customOutputPath, op
             try {
               mainWindow?.webContents.send('pdf-ocr-progress', { current: i, total: totalPages });
               const imgBuffer = await docStream.getPage(i);
-              const ocrResult = await worker.recognize(imgBuffer);
-              const ocrText = ocrResult.data.text || '';
-              const pageLines = ocrText.split(/\r?\n/);
+              const ocrResult = await worker.recognize(imgBuffer, {}, { blocks: true });
+              
+              // Extract OCR lines with geometry info
+              let ocrLines = [];
+              if (ocrResult.data && ocrResult.data.blocks && ocrResult.data.blocks.length > 0) {
+                for (const b of ocrResult.data.blocks) {
+                  if (b.paragraphs) {
+                    for (const p of b.paragraphs) {
+                      if (p.lines) {
+                        for (const l of p.lines) {
+                          ocrLines.push(l);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
 
+              // Fallback if blocks structure was not populated
+              if (ocrLines.length === 0 && ocrResult.data.text) {
+                ocrLines = ocrResult.data.text.split(/\r?\n/).map(t => ({ text: t, bbox: null }));
+              }
+
+              // Page separator banner in Word
               paragraphs.push(
                 new Paragraph({
                   heading: HeadingLevel.HEADING_3,
-                  spacing: { before: i === 1 ? 0 : 300, after: 120 },
+                  spacing: { before: i === 1 ? 0 : 360, after: 140 },
                   children: [
                     new TextRun({
                       text: `[Trang ${i}]`,
@@ -1015,21 +1035,78 @@ ipcMain.handle('convert-pdf-to-word', async (_e, inputPath, customOutputPath, op
                 })
               );
 
-              for (const line of pageLines) {
-                const trimmed = line.trim();
+              // Calculate average page width & text boundaries for alignment detection
+              let minX = 9999, maxX = 0;
+              for (const l of ocrLines) {
+                if (l.bbox) {
+                  if (l.bbox.x0 < minX) minX = l.bbox.x0;
+                  if (l.bbox.x1 > maxX) maxX = l.bbox.x1;
+                }
+              }
+              const pageContentWidth = (maxX > minX) ? (maxX - minX) : 500;
+              const pageCenterX = minX + pageContentWidth / 2;
+
+              for (const line of ocrLines) {
+                const trimmed = (line.text || '').trim();
                 if (!trimmed) {
                   paragraphs.push(new Paragraph({ text: '' }));
                   continue;
                 }
 
+                let alignment = AlignmentType.LEFT;
+                let isBold = false;
+                let fontSize = 22; // 11pt default
+                let spacingBefore = 40;
+                let spacingAfter = 80;
+
+                if (line.bbox) {
+                  const lineW = line.bbox.x1 - line.bbox.x0;
+                  const lineH = line.bbox.y1 - line.bbox.y0;
+                  const lineCenterX = line.bbox.x0 + lineW / 2;
+
+                  // 1. Detect Center Alignment (title, headers, subjects)
+                  const centerDist = Math.abs(lineCenterX - pageCenterX);
+                  if (centerDist < 35 && lineW < pageContentWidth * 0.75) {
+                    alignment = AlignmentType.CENTER;
+                  }
+
+                  // 2. Detect Headings & Emphasis based on line height / uppercase / keywords
+                  const isTitleText = (
+                    trimmed === trimmed.toUpperCase() && trimmed.length > 3 && /[A-ZÀ-Ỹ]/.test(trimmed)
+                  ) || /^(NGÂN HÀNG|BÀI|CHƯƠNG|MÔN:|PHẦN|ĐỀ THI|BỘ CÂU HỎI|CỘNG HÒA|ĐỘC LẬP)/i.test(trimmed);
+
+                  if (lineH >= 20 || isTitleText) {
+                    isBold = true;
+                    fontSize = lineH >= 22 ? 26 : 24; // 13pt or 12pt
+                    spacingBefore = 180;
+                    spacingAfter = 100;
+                  } else if (lineH <= 12) {
+                    fontSize = 20; // 10pt for smaller notes or footnotes
+                  }
+
+                  // 3. Detect Table / Grid rows (starts with index or bracket like [1], 1., SIT, Phin)
+                  if (/^(\[|\(|[0-9]+[\.\)])/.test(trimmed)) {
+                    spacingBefore = 20;
+                    spacingAfter = 40;
+                  }
+                } else {
+                  // Fallback heuristic without bbox
+                  if (trimmed === trimmed.toUpperCase() && trimmed.length > 4) {
+                    isBold = true;
+                    fontSize = 24;
+                  }
+                }
+
                 paragraphs.push(
                   new Paragraph({
-                    spacing: { after: 100, line: 276 },
+                    alignment,
+                    spacing: { before: spacingBefore, after: spacingAfter, line: 276 },
                     children: [
                       new TextRun({
                         text: trimmed,
-                        size: 22, // 11pt
-                        color: '1E293B',
+                        bold: isBold,
+                        size: fontSize,
+                        color: isBold ? '0F172A' : '334155',
                         font: 'Calibri'
                       })
                     ]
