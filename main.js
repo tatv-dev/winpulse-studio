@@ -1,3 +1,10 @@
+// ─── Polyfill for Node.js / Electron 29 compatibility ──────────────────────────
+if (typeof process.getBuiltinModule !== 'function') {
+  process.getBuiltinModule = function (name) {
+    return require(name);
+  };
+}
+
 const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, globalShortcut, clipboard, nativeTheme, dialog, screen, shell } = require('electron');
 const { uIOhook, UiohookKey } = require('uiohook-napi');
 const path = require('path');
@@ -851,6 +858,260 @@ ipcMain.handle('open-data-folder', async () => {
 });
 
 ipcMain.handle('export-data', (_e, format) => handleExportData(format));
+
+// ─── PDF to Word (DOCX) Converter Engine ──────────────────────────────────────
+const pdfParse = require('pdf-parse-fork');
+const { Document, Packer, Paragraph, TextRun, HeadingLevel, ImageRun } = require('docx');
+
+ipcMain.handle('select-pdf-file', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Chọn tập tin PDF',
+    properties: ['openFile'],
+    filters: [
+      { name: 'Tài liệu PDF (*.pdf)', extensions: ['pdf'] }
+    ]
+  });
+
+  if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+    return { canceled: true };
+  }
+
+  const filePath = result.filePaths[0];
+  const fileStats = fs.statSync(filePath);
+  return {
+    canceled: false,
+    filePath,
+    fileName: path.basename(filePath),
+    fileSize: fileStats.size
+  };
+});
+
+ipcMain.handle('convert-pdf-to-word', async (_e, inputPath, customOutputPath, options = {}) => {
+  try {
+    if (!inputPath || !fs.existsSync(inputPath)) {
+      return { success: false, error: 'Tập tin PDF nguồn không tồn tại.' };
+    }
+
+    const ocrMode = options.ocrMode || 'ocr'; // 'ocr' or 'images'
+
+    let outputPath = customOutputPath;
+    if (!outputPath) {
+      const baseName = path.basename(inputPath, path.extname(inputPath));
+      const defaultName = `${baseName}.docx`;
+      const defaultDir = path.dirname(inputPath);
+      
+      const saveResult = await dialog.showSaveDialog(mainWindow, {
+        title: 'Lưu tập tin Word (.docx)',
+        defaultPath: path.join(defaultDir, defaultName),
+        filters: [
+          { name: 'Word Document (*.docx)', extensions: ['docx'] }
+        ]
+      });
+
+      if (saveResult.canceled || !saveResult.filePath) {
+        return { success: false, canceled: true };
+      }
+      outputPath = saveResult.filePath;
+    }
+
+    // Read and parse PDF text
+    const dataBuffer = fs.readFileSync(inputPath);
+    let pdfData = null;
+    try {
+      pdfData = await pdfParse(dataBuffer);
+    } catch (parseErr) {
+      console.warn('pdfParse error, fallback to OCR/images:', parseErr);
+    }
+
+    const rawText = (pdfData && pdfData.text) ? pdfData.text.trim() : '';
+    const paragraphs = [];
+    let isScanMode = false;
+    let pageCount = pdfData?.numpages || 1;
+
+    // Check if PDF has extractable native text
+    if (rawText.length > 50) {
+      // Split text into lines / paragraphs
+      const lines = rawText.split(/\r?\n/);
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) {
+          paragraphs.push(new Paragraph({ text: '' }));
+          continue;
+        }
+
+        // Check if line looks like a title or header
+        const isHeader = line.length < 80 && (
+          /^(\d+(\.\d+)*\s+[A-ZÀ-Ỹ]|CHƯƠNG|BÀI|PHẦN|MỤC|ARTICLE|SECTION|CHAPTER)/i.test(line) ||
+          (line === line.toUpperCase() && line.length > 3 && /[A-ZÀ-Ỹ]/.test(line))
+        );
+
+        if (isHeader) {
+          paragraphs.push(
+            new Paragraph({
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 240, after: 120 },
+              children: [
+                new TextRun({
+                  text: line,
+                  bold: true,
+                  size: 26, // 13pt
+                  color: '1E293B',
+                  font: 'Calibri'
+                })
+              ]
+            })
+          );
+        } else {
+          paragraphs.push(
+            new Paragraph({
+              spacing: { after: 100, line: 276 },
+              children: [
+                new TextRun({
+                  text: line,
+                  size: 22, // 11pt
+                  color: '334155',
+                  font: 'Calibri'
+                })
+              ]
+            })
+          );
+        }
+      }
+    } else {
+      // PDF is scanned or image-only! Run Real OCR or High-Res Image preservation
+      isScanMode = true;
+      const { pdf: pdfToImg } = await import('pdf-to-img');
+      const docStream = await pdfToImg(inputPath, { scale: 1.0 });
+      const totalPages = docStream.length || pageCount || 1;
+      pageCount = totalPages;
+
+      if (ocrMode === 'ocr') {
+        // ─── Real OCR Text Extraction using Tesseract.js (Vietnamese + English) ───
+        const { createWorker } = require('tesseract.js');
+        const worker = await createWorker('vie+eng');
+
+        try {
+          for (let i = 1; i <= totalPages; i++) {
+            try {
+              mainWindow?.webContents.send('pdf-ocr-progress', { current: i, total: totalPages });
+              const imgBuffer = await docStream.getPage(i);
+              const ocrResult = await worker.recognize(imgBuffer);
+              const ocrText = ocrResult.data.text || '';
+              const pageLines = ocrText.split(/\r?\n/);
+
+              paragraphs.push(
+                new Paragraph({
+                  heading: HeadingLevel.HEADING_3,
+                  spacing: { before: i === 1 ? 0 : 300, after: 120 },
+                  children: [
+                    new TextRun({
+                      text: `[Trang ${i}]`,
+                      bold: true,
+                      size: 20,
+                      color: '64748B',
+                      font: 'Calibri'
+                    })
+                  ]
+                })
+              );
+
+              for (const line of pageLines) {
+                const trimmed = line.trim();
+                if (!trimmed) {
+                  paragraphs.push(new Paragraph({ text: '' }));
+                  continue;
+                }
+
+                paragraphs.push(
+                  new Paragraph({
+                    spacing: { after: 100, line: 276 },
+                    children: [
+                      new TextRun({
+                        text: trimmed,
+                        size: 22, // 11pt
+                        color: '1E293B',
+                        font: 'Calibri'
+                      })
+                    ]
+                  })
+                );
+              }
+            } catch (pageErr) {
+              console.warn(`OCR error on page ${i}:`, pageErr.message);
+            }
+          }
+        } finally {
+          await worker.terminate();
+        }
+      } else {
+        // ─── Image preservation mode ───
+        for (let i = 1; i <= totalPages; i++) {
+          try {
+            const imgBuffer = await docStream.getPage(i);
+            paragraphs.push(
+              new Paragraph({
+                spacing: { before: i === 1 ? 0 : 200, after: 120 },
+                children: [
+                  new ImageRun({
+                    data: imgBuffer,
+                    transformation: {
+                      width: 595,
+                      height: 842
+                    }
+                  })
+                ]
+              })
+            );
+          } catch (pageErr) {
+            console.warn(`Could not render image page ${i}:`, pageErr.message);
+          }
+        }
+      }
+    }
+
+    const doc = new Document({
+      sections: [{
+        properties: {
+          page: {
+            margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 }
+          }
+        },
+        children: paragraphs
+      }]
+    });
+
+    const docxBuffer = await Packer.toBuffer(doc);
+    fs.writeFileSync(outputPath, docxBuffer);
+
+    return {
+      success: true,
+      outputPath,
+      outputName: path.basename(outputPath),
+      numpages: pageCount,
+      totalLength: rawText.length,
+      isScanMode
+    };
+  } catch (err) {
+    console.error('PDF to Word conversion error:', err);
+    return { success: false, error: err.message || 'Lỗi không xác định khi chuyển đổi' };
+  }
+});
+
+ipcMain.handle('open-file-path', async (_e, filePath) => {
+  if (filePath && fs.existsSync(filePath)) {
+    await shell.openPath(filePath);
+    return { success: true };
+  }
+  return { success: false, error: 'Tập tin không tồn tại' };
+});
+
+ipcMain.handle('show-item-in-folder', async (_e, filePath) => {
+  if (filePath && fs.existsSync(filePath)) {
+    shell.showItemInFolder(filePath);
+    return { success: true };
+  }
+  return { success: false, error: 'Tập tin không tồn tại' };
+});
 
 ipcMain.handle('reset-today', () => {
   const key = getTodayKey();

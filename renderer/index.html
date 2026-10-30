@@ -59,6 +59,10 @@
         <span class="nav-icon"><i data-lucide="zap" class="icon-md"></i></span>
         <span class="nav-label" data-i18n="nav_autoclick">Auto Click</span>
       </button>
+      <button class="nav-item" data-page="pdftoword" title="PDF to Word">
+        <span class="nav-icon"><i data-lucide="file-text" class="icon-md"></i></span>
+        <span class="nav-label" data-i18n="nav_pdf_to_word">PDF sang Word</span>
+      </button>
       <button class="nav-item" data-page="history" title="Lịch sử">
         <span class="nav-icon"><i data-lucide="calendar-days" class="icon-md"></i></span>
         <span class="nav-label" data-i18n="nav_history">Lịch sử</span>
@@ -392,6 +396,131 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Page: PDF to Word ── -->
+    <section class="page" id="page-pdftoword">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title" data-i18n="pdf_converter_title">Chuyển Đổi PDF Sang Word</h1>
+          <p class="page-subtitle" data-i18n="pdf_converter_subtitle">Trích xuất văn bản & chuyển đổi offline an toàn</p>
+        </div>
+      </div>
+
+      <div class="pdf-container">
+        <!-- Dropzone / File Picker Card -->
+        <div class="pdf-dropzone-card" id="pdf-dropzone">
+          <input type="file" id="pdf-file-input" accept=".pdf" style="display: none;" />
+          <div class="dropzone-content" id="dropzone-empty-state">
+            <div class="dropzone-icon-box">
+              <i data-lucide="file-up" class="icon-xl"></i>
+            </div>
+            <h3 class="dropzone-title" data-i18n="pdf_drop_zone_title">Kéo thả file PDF vào đây hoặc bấm để duyệt</h3>
+            <p class="dropzone-hint" data-i18n="pdf_drop_zone_hint">Chỉ hỗ trợ file *.pdf • Xử lý hoàn toàn offline 100% trên máy</p>
+            <button type="button" class="btn btn-primary" id="btn-browse-pdf">
+              <i data-lucide="folder-search" class="icon-sm"></i>
+              <span data-i18n="pdf_btn_choose">Chọn File PDF</span>
+            </button>
+          </div>
+
+          <!-- File Selected State -->
+          <div class="dropzone-selected-state" id="dropzone-selected-state" style="display: none;">
+            <div class="selected-file-badge">
+              <div class="file-icon-box">
+                <i data-lucide="file-type-2" class="icon-lg"></i>
+              </div>
+              <div class="file-details">
+                <div class="file-name" id="selected-pdf-name">document.pdf</div>
+                <div class="file-meta">
+                  <span id="selected-pdf-size">0 KB</span>
+                  <span class="meta-dot">•</span>
+                  <span class="file-path-badge" id="selected-pdf-path">D:\...</span>
+                </div>
+              </div>
+            </div>
+            <!-- Mode selection for Scan PDF -->
+            <div class="pdf-mode-selection" style="margin-top: 14px; padding: 12px 14px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-md);">
+              <div style="font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="scan-text" class="icon-sm text-primary"></i>
+                <span data-i18n="pdf_mode_title">Tùy chọn trích xuất & OCR:</span>
+              </div>
+              <div style="display: flex; gap: 18px; font-size: 12.5px;">
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                  <input type="radio" name="pdf-mode" value="ocr" checked />
+                  <span style="font-weight: 500;" data-i18n="pdf_mode_ocr">OCR Nhận diện chữ tiếng Việt (Chuyển thành Text thật 100%)</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                  <input type="radio" name="pdf-mode" value="images" />
+                  <span style="color: var(--text-secondary);" data-i18n="pdf_mode_img">Giữ ảnh nguyên bản (Chèn trang ảnh nét cao)</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="selected-actions" style="margin-top: 14px;">
+              <button type="button" class="btn btn-outline" id="btn-change-pdf">
+                <i data-lucide="refresh-cw" class="icon-sm"></i>
+                <span data-i18n="pdf_btn_change">Đổi file khác</span>
+              </button>
+              <button type="button" class="btn btn-success" id="btn-start-convert">
+                <i data-lucide="arrow-right-left" class="icon-sm"></i>
+                <span data-i18n="pdf_btn_convert">Chuyển Đổi Sang Word (.docx)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress / Converting State -->
+        <div class="pdf-status-card" id="pdf-converting-card" style="display: none;">
+          <div class="spinner-box">
+            <div class="loading-spinner"></div>
+          </div>
+          <div class="status-info">
+            <h4 data-i18n="pdf_converting">Đang chuyển đổi...</h4>
+            <p class="status-detail" id="converting-status-text">Đang phân tích cấu trúc trang & trích xuất văn bản...</p>
+          </div>
+        </div>
+
+        <!-- Success Result Card -->
+        <div class="pdf-result-card" id="pdf-result-card" style="display: none;">
+          <div class="result-header">
+            <div class="result-icon-box success">
+              <i data-lucide="check-circle-2" class="icon-lg"></i>
+            </div>
+            <div>
+              <h3 class="result-title" data-i18n="pdf_result_success">Chuyển đổi thành công!</h3>
+              <p class="result-meta" id="result-summary-text">Hoàn tất 1 trang • File DOCX đã sẵn sàng</p>
+            </div>
+          </div>
+
+          <div class="result-file-display">
+            <i data-lucide="file-check" class="icon-md text-success"></i>
+            <span class="result-file-name" id="result-docx-path">document.docx</span>
+          </div>
+
+          <div class="result-actions">
+            <button type="button" class="btn btn-primary" id="btn-open-word-file">
+              <i data-lucide="file-text" class="icon-sm"></i>
+              <span data-i18n="pdf_btn_open_file">Mở File Word</span>
+            </button>
+            <button type="button" class="btn btn-outline" id="btn-open-word-folder">
+              <i data-lucide="folder" class="icon-sm"></i>
+              <span data-i18n="pdf_btn_open_folder">Mở Thư Mục Chứa</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Notes Card -->
+        <div class="pdf-info-card">
+          <div class="info-card-header">
+            <i data-lucide="shield-check" class="icon-md text-primary"></i>
+            <span class="info-card-title" data-i18n="pdf_note_title">Lưu ý khi chuyển đổi:</span>
+          </div>
+          <ul class="info-list">
+            <li data-i18n="pdf_note_1">Quá trình chuyển đổi diễn ra trực tiếp trên máy của bạn, hoàn toàn bảo mật và không tải file lên bất kỳ máy chủ nào.</li>
+            <li data-i18n="pdf_note_2">Định dạng hỗ trợ trích xuất văn bản, cấu trúc đoạn và tiêu đề. Với file scan ảnh, Word sẽ nhận văn bản dạng trích xuất nếu có lớp text OCR.</li>
+          </ul>
         </div>
       </div>
     </section>

@@ -27,6 +27,13 @@ contextBridge.exposeInMainWorld('api', {
   openDataFolder: () => ipcRenderer.invoke('open-data-folder'),
   exportData: (format) => ipcRenderer.invoke('export-data', format),
 
+  // PDF to Word APIs
+  selectPdfFile: () => ipcRenderer.invoke('select-pdf-file'),
+  convertPdfToWord: (inputPath, outputPath, options) => ipcRenderer.invoke('convert-pdf-to-word', inputPath, outputPath, options),
+  onPdfOcrProgress: (cb) => ipcRenderer.on('pdf-ocr-progress', (_e, data) => cb(data)),
+  openFilePath: (filePath) => ipcRenderer.invoke('open-file-path', filePath),
+  showItemInFolder: (filePath) => ipcRenderer.invoke('show-item-in-folder', filePath),
+
   windowMinimize: () => ipcRenderer.send('window-minimize'),
   windowMaximize: () => ipcRenderer.send('window-maximize'),
   windowClose: () => ipcRenderer.send('window-close'),

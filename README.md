@@ -18,6 +18,7 @@
 - 📊 **Productivity Telemetry**: Real-time counters for Copy/Paste, clicks, scroll, and mouse movement distance (m/km).
 - ⏱️ **Active Screen Time & Calories**: Automatically tracks active working time (with smart idle detection) and estimates energetic expenditure (kcal).
 - ⚡ **Native Hardware Auto Clicker**: Low-latency Windows `user32.dll` simulation with customizable speed (down to 10ms), fixed/cursor positioning, and anti-bot jitter.
+- 📄 **100% Offline PDF to Word Converter**: Fast and private conversion of `.pdf` documents to `.docx` format directly on the device with zero cloud dependency.
 - ⌨️ **Global Hotkeys**: Control the auto-clicker anywhere on Windows using custom shortcuts (Default: `F6` to Start/Stop, `F7` to pick coordinates).
 - 🛡️ **Privacy-First**: 100% offline and local storage (`%APPDATA%/winpulse`). Zero keylogging or cloud telemetry.
 - 🌐 **Bilingual UI**: Seamless instant toggle between **Tiếng Việt** and **English**.

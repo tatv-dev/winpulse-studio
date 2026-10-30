@@ -18,3 +18,7 @@ stats.json
 .idea/
 .DS_Store
 Thumbs.db
+
+# OCR & Test Data
+*.traineddata
+*.pdf

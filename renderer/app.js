@@ -871,3 +871,194 @@ function showToast(msg) {
     setTimeout(() => toast.remove(), 250);
   }, 2500);
 }
+
+// ─── PDF to Word Converter Controller ──────────────────────────────────────────
+let currentPdfFile = null;
+let lastConvertedDocx = null;
+
+function formatFileSize(bytes) {
+  if (!bytes || bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+function selectPdfFile(filePath, fileName, fileSize) {
+  currentPdfFile = { filePath, fileName, fileSize };
+  
+  const emptyState = document.getElementById('dropzone-empty-state');
+  const selectedState = document.getElementById('dropzone-selected-state');
+  const nameEl = document.getElementById('selected-pdf-name');
+  const sizeEl = document.getElementById('selected-pdf-size');
+  const pathEl = document.getElementById('selected-pdf-path');
+  const resultCard = document.getElementById('pdf-result-card');
+  const convertingCard = document.getElementById('pdf-converting-card');
+
+  if (emptyState) emptyState.style.display = 'none';
+  if (selectedState) selectedState.style.display = 'flex';
+  if (resultCard) resultCard.style.display = 'none';
+  if (convertingCard) convertingCard.style.display = 'none';
+
+  if (nameEl) nameEl.textContent = fileName;
+  if (sizeEl) sizeEl.textContent = formatFileSize(fileSize);
+  if (pathEl) {
+    pathEl.textContent = filePath;
+    pathEl.title = filePath;
+  }
+
+  refreshIcons();
+}
+
+function clearPdfSelection() {
+  currentPdfFile = null;
+  const emptyState = document.getElementById('dropzone-empty-state');
+  const selectedState = document.getElementById('dropzone-selected-state');
+  const convertingCard = document.getElementById('pdf-converting-card');
+
+  if (emptyState) emptyState.style.display = 'flex';
+  if (selectedState) selectedState.style.display = 'none';
+  if (convertingCard) convertingCard.style.display = 'none';
+  refreshIcons();
+}
+
+// Browse PDF via Dialog
+document.getElementById('btn-browse-pdf')?.addEventListener('click', async (e) => {
+  e.stopPropagation();
+  if (!window.api?.selectPdfFile) return;
+  const res = await window.api.selectPdfFile();
+  if (res && !res.canceled && res.filePath) {
+    selectPdfFile(res.filePath, res.fileName, res.fileSize);
+  }
+});
+
+// Change selected PDF
+document.getElementById('btn-change-pdf')?.addEventListener('click', async (e) => {
+  e.stopPropagation();
+  if (!window.api?.selectPdfFile) return;
+  const res = await window.api.selectPdfFile();
+  if (res && !res.canceled && res.filePath) {
+    selectPdfFile(res.filePath, res.fileName, res.fileSize);
+  }
+});
+
+// Drag and drop support on dropzone card
+const dropzoneCard = document.getElementById('pdf-dropzone');
+if (dropzoneCard) {
+  dropzoneCard.addEventListener('click', async (e) => {
+    // If not clicking on buttons inside
+    if (e.target.closest('button')) return;
+    if (!window.api?.selectPdfFile) return;
+    const res = await window.api.selectPdfFile();
+    if (res && !res.canceled && res.filePath) {
+      selectPdfFile(res.filePath, res.fileName, res.fileSize);
+    }
+  });
+
+  dropzoneCard.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropzoneCard.classList.add('drag-over');
+  });
+
+  dropzoneCard.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropzoneCard.classList.remove('drag-over');
+  });
+
+  dropzoneCard.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropzoneCard.classList.remove('drag-over');
+
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (file.name.toLowerCase().endsWith('.pdf')) {
+        selectPdfFile(file.path, file.name, file.size);
+      } else {
+        showToast('Vui lòng chỉ chọn tập tin có định dạng .pdf', 'alert-circle');
+      }
+    }
+  });
+}
+
+// Convert action
+document.getElementById('btn-start-convert')?.addEventListener('click', async () => {
+  if (!currentPdfFile || !currentPdfFile.filePath) {
+    showToast('Vui lòng chọn tập tin PDF trước', 'alert-circle');
+    return;
+  }
+
+  const convertingCard = document.getElementById('pdf-converting-card');
+  const resultCard = document.getElementById('pdf-result-card');
+  const btnConvert = document.getElementById('btn-start-convert');
+
+  if (convertingCard) convertingCard.style.display = 'flex';
+  if (resultCard) resultCard.style.display = 'none';
+  if (btnConvert) btnConvert.disabled = true;
+
+  // Listen to live OCR progress
+  const statusDetail = document.getElementById('converting-status-text');
+  if (window.api?.onPdfOcrProgress) {
+    window.api.onPdfOcrProgress((prog) => {
+      if (statusDetail && prog) {
+        statusDetail.textContent = `Đang quét OCR nhận diện chữ: Trang ${prog.current} / ${prog.total}...`;
+      }
+    });
+  }
+
+  // Get selected mode
+  const selectedMode = document.querySelector('input[name="pdf-mode"]:checked')?.value || 'ocr';
+
+  try {
+    const res = await window.api.convertPdfToWord(currentPdfFile.filePath, null, { ocrMode: selectedMode });
+    if (convertingCard) convertingCard.style.display = 'none';
+    if (btnConvert) btnConvert.disabled = false;
+
+    if (res && res.success) {
+      lastConvertedDocx = res.outputPath;
+      if (resultCard) resultCard.style.display = 'flex';
+
+      const pathEl = document.getElementById('result-docx-path');
+      const summaryEl = document.getElementById('result-summary-text');
+
+      if (pathEl) pathEl.textContent = res.outputPath;
+      if (summaryEl) {
+        if (res.isScanMode) {
+          if (selectedMode === 'ocr') {
+            summaryEl.textContent = `${res.numpages || 1} trang • Đã nhận diện OCR Tiếng Việt thành văn bản Word (.docx)`;
+          } else {
+            summaryEl.textContent = `${res.numpages || 1} trang (Bản quét PDF Scan) • Đã chèn ảnh nét cao vào Word (.docx)`;
+          }
+        } else {
+          summaryEl.textContent = `${res.numpages || 1} trang • ${formatFileSize(res.totalLength || 0)} văn bản • File Word (.docx) sẵn sàng`;
+        }
+      }
+
+      showToast(t('pdf_result_success') || 'Chuyển đổi thành công!', 'check-circle-2');
+      refreshIcons();
+    } else if (res && !res.canceled) {
+      showToast(res.error || 'Chuyển đổi thất bại', 'alert-circle');
+    }
+  } catch (err) {
+    if (convertingCard) convertingCard.style.display = 'none';
+    if (btnConvert) btnConvert.disabled = false;
+    showToast('Lỗi: ' + (err.message || 'Chuyển đổi thất bại'), 'alert-circle');
+  }
+});
+
+// Result Action: Open Word Document
+document.getElementById('btn-open-word-file')?.addEventListener('click', async () => {
+  if (lastConvertedDocx && window.api?.openFilePath) {
+    await window.api.openFilePath(lastConvertedDocx);
+  }
+});
+
+// Result Action: Show in folder
+document.getElementById('btn-open-word-folder')?.addEventListener('click', async () => {
+  if (lastConvertedDocx && window.api?.showItemInFolder) {
+    await window.api.showItemInFolder(lastConvertedDocx);
+  }
+});

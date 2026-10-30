@@ -2,7 +2,7 @@
   "name": "winpulse-studio",
   "version": "1.4.0",
   "description": "WinPulse Studio - Windows Productivity Metrics and Desktop Utilities",
-  "author": "Hexgy",
+  "author": "tatv",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -50,7 +50,6 @@
     "clipboard",
     "autoclicker"
   ],
-  "author": "tatv",
   "license": "MIT",
   "devDependencies": {
     "electron": "^29.0.0",
@@ -58,6 +57,10 @@
     "png-to-ico": "^3.0.2"
   },
   "dependencies": {
+    "docx": "^9.15.0",
+    "pdf-parse-fork": "^1.2.0",
+    "pdf-to-img": "^7.0.1",
+    "tesseract.js": "^7.0.0",
     "uiohook-napi": "^1.5.5"
   }
 }
