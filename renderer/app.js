@@ -82,7 +82,9 @@ function navigateTo(page) {
   currentPage = page;
   document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.page === page));
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === `page-${page}`));
-  if (statsCache) renderAll(statsCache);
+  if (statsCache && (page === 'dashboard' || page === 'history')) {
+    renderAll(statsCache);
+  }
   refreshIcons();
 }
 
@@ -408,7 +410,7 @@ window.api.onTriggerAutoClickToggle(() => {
 function renderAll(data) {
   renderDashboard(data);
   renderHistory(data);
-  refreshIcons();
+  // Do NOT re-render merge list or touch PDF Tools inputs during global telemetry updates
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
@@ -1060,5 +1062,339 @@ document.getElementById('btn-open-word-file')?.addEventListener('click', async (
 document.getElementById('btn-open-word-folder')?.addEventListener('click', async () => {
   if (lastConvertedDocx && window.api?.showItemInFolder) {
     await window.api.showItemInFolder(lastConvertedDocx);
+  }
+});
+
+// ─── PDF Tools: Subtabs Navigation ────────────────────────────────────────────
+document.querySelectorAll('.pdf-subtab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const targetPanelId = btn.dataset.target;
+    document.querySelectorAll('.pdf-subtab-btn').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.pdf-subpanel').forEach(panel => {
+      if (panel.id === targetPanelId) {
+        panel.style.display = 'block';
+        panel.classList.add('active');
+      } else {
+        panel.style.display = 'none';
+        panel.classList.remove('active');
+      }
+    });
+    refreshIcons();
+  });
+});
+
+// ─── PDF Tools: PDF Merge Controller ──────────────────────────────────────────
+let mergePdfFilesList = [];
+let lastMergedPdfPath = null;
+let draggedMergeIndex = null;
+
+function renderMergeList() {
+  const container = document.getElementById('pdf-merge-list-container');
+  const emptyDropzone = document.getElementById('pdf-merge-dropzone');
+  const itemsWrapper = document.getElementById('merge-items-wrapper');
+  const countBadge = document.getElementById('merge-files-count');
+  const btnStartMerge = document.getElementById('btn-start-merge');
+
+  if (mergePdfFilesList.length === 0) {
+    if (container) container.style.display = 'none';
+    if (emptyDropzone) emptyDropzone.style.display = 'block';
+    return;
+  }
+
+  if (emptyDropzone) emptyDropzone.style.display = 'none';
+  if (container) container.style.display = 'flex';
+  if (countBadge) countBadge.textContent = `${mergePdfFilesList.length} file`;
+  if (btnStartMerge) btnStartMerge.disabled = mergePdfFilesList.length < 2;
+
+  if (!itemsWrapper) return;
+  itemsWrapper.innerHTML = '';
+
+  mergePdfFilesList.forEach((file, index) => {
+    const itemEl = document.createElement('div');
+    itemEl.className = 'merge-item';
+    itemEl.dataset.index = index;
+    itemEl.draggable = true;
+
+    itemEl.innerHTML = `
+      <div class="merge-item-left">
+        <div class="merge-drag-handle" title="Kéo thả để sắp xếp vị trí">
+          <i data-lucide="grip-vertical" class="icon-sm"></i>
+        </div>
+        <span class="merge-item-index">${index + 1}</span>
+        <div class="merge-item-icon">
+          <i data-lucide="file-text" class="icon-md"></i>
+        </div>
+        <div class="merge-item-details">
+          <div class="merge-item-name" title="${file.fileName}">${file.fileName}</div>
+          <div class="merge-item-meta">${formatFileSize(file.fileSize)} • ${file.filePath}</div>
+        </div>
+      </div>
+      <div class="merge-item-actions">
+        <button type="button" class="merge-item-btn btn-move-up" title="Di chuyển lên" ${index === 0 ? 'disabled' : ''}>
+          <i data-lucide="chevron-up" class="icon-xs"></i>
+        </button>
+        <button type="button" class="merge-item-btn btn-move-down" title="Di chuyển xuống" ${index === mergePdfFilesList.length - 1 ? 'disabled' : ''}>
+          <i data-lucide="chevron-down" class="icon-xs"></i>
+        </button>
+        <button type="button" class="merge-item-btn btn-remove" title="Xóa khỏi danh sách">
+          <i data-lucide="x" class="icon-xs"></i>
+        </button>
+      </div>
+    `;
+
+    // ─── Drag & Drop Reordering Handlers ───
+    itemEl.addEventListener('dragstart', (e) => {
+      draggedMergeIndex = index;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', index.toString());
+      setTimeout(() => itemEl.classList.add('dragging'), 0);
+    });
+
+    itemEl.addEventListener('dragend', () => {
+      itemEl.classList.remove('dragging');
+      document.querySelectorAll('.merge-item').forEach(el => {
+        el.classList.remove('drag-over-top', 'drag-over-bottom');
+      });
+      draggedMergeIndex = null;
+    });
+
+    itemEl.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (draggedMergeIndex === null || draggedMergeIndex === index) return;
+
+      const rect = itemEl.getBoundingClientRect();
+      const midY = rect.top + rect.height / 2;
+      if (e.clientY < midY) {
+        itemEl.classList.add('drag-over-top');
+        itemEl.classList.remove('drag-over-bottom');
+      } else {
+        itemEl.classList.add('drag-over-bottom');
+        itemEl.classList.remove('drag-over-top');
+      }
+    });
+
+    itemEl.addEventListener('dragleave', (e) => {
+      // Only remove highlight if actually leaving this item
+      if (!itemEl.contains(e.relatedTarget)) {
+        itemEl.classList.remove('drag-over-top', 'drag-over-bottom');
+      }
+    });
+
+    itemEl.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      itemEl.classList.remove('drag-over-top', 'drag-over-bottom');
+
+      if (draggedMergeIndex === null || draggedMergeIndex === index) return;
+
+      const rect = itemEl.getBoundingClientRect();
+      const midY = rect.top + rect.height / 2;
+      const isInsertBefore = e.clientY < midY;
+
+      // Extract moved item
+      const [movedItem] = mergePdfFilesList.splice(draggedMergeIndex, 1);
+
+      // Re-calculate target index after removal
+      let targetIndex = index;
+      if (draggedMergeIndex < index) {
+        // Since we removed an element before `index`, the original item shifted 1 left
+        targetIndex = isInsertBefore ? index - 1 : index;
+      } else {
+        // Dragged from below to above
+        targetIndex = isInsertBefore ? index : index + 1;
+      }
+
+      mergePdfFilesList.splice(targetIndex, 0, movedItem);
+      renderMergeList();
+    });
+
+    // Event handlers for item buttons
+    itemEl.querySelector('.btn-move-up')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (index > 0) {
+        const temp = mergePdfFilesList[index];
+        mergePdfFilesList[index] = mergePdfFilesList[index - 1];
+        mergePdfFilesList[index - 1] = temp;
+        renderMergeList();
+      }
+    });
+
+    itemEl.querySelector('.btn-move-down')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (index < mergePdfFilesList.length - 1) {
+        const temp = mergePdfFilesList[index];
+        mergePdfFilesList[index] = mergePdfFilesList[index + 1];
+        mergePdfFilesList[index + 1] = temp;
+        renderMergeList();
+      }
+    });
+
+    itemEl.querySelector('.btn-remove')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      mergePdfFilesList.splice(index, 1);
+      renderMergeList();
+    });
+
+    itemsWrapper.appendChild(itemEl);
+  });
+
+  refreshIcons();
+}
+
+function addMergeFiles(files) {
+  if (!files || files.length === 0) return;
+  for (const f of files) {
+    if (!mergePdfFilesList.some(item => item.filePath.toLowerCase() === f.filePath.toLowerCase())) {
+      mergePdfFilesList.push(f);
+    }
+  }
+  const resultCard = document.getElementById('pdf-merge-result-card');
+  if (resultCard) resultCard.style.display = 'none';
+  renderMergeList();
+}
+
+// Select multiple PDFs button
+document.getElementById('btn-browse-merge-pdf')?.addEventListener('click', async (e) => {
+  e.stopPropagation();
+  if (!window.api?.selectMultiplePdfFiles) return;
+  const res = await window.api.selectMultiplePdfFiles();
+  if (res && !res.canceled && res.files && res.files.length > 0) {
+    addMergeFiles(res.files);
+  }
+});
+
+// Add more PDFs button
+document.getElementById('btn-add-more-pdf')?.addEventListener('click', async () => {
+  if (!window.api?.selectMultiplePdfFiles) return;
+  const res = await window.api.selectMultiplePdfFiles();
+  if (res && !res.canceled && res.files && res.files.length > 0) {
+    addMergeFiles(res.files);
+  }
+});
+
+// Clear all merge list
+document.getElementById('btn-clear-merge-list')?.addEventListener('click', () => {
+  mergePdfFilesList = [];
+  renderMergeList();
+});
+
+// Drag and drop for Merge Dropzone
+const mergeDropzone = document.getElementById('pdf-merge-dropzone');
+if (mergeDropzone) {
+  mergeDropzone.addEventListener('click', async (e) => {
+    if (e.target.closest('button')) return;
+    if (!window.api?.selectMultiplePdfFiles) return;
+    const res = await window.api.selectMultiplePdfFiles();
+    if (res && !res.canceled && res.files && res.files.length > 0) {
+      addMergeFiles(res.files);
+    }
+  });
+
+  mergeDropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    mergeDropzone.classList.add('drag-over');
+  });
+
+  mergeDropzone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    mergeDropzone.classList.remove('drag-over');
+  });
+
+  mergeDropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    mergeDropzone.classList.remove('drag-over');
+
+    const dtFiles = e.dataTransfer?.files;
+    if (dtFiles && dtFiles.length > 0) {
+      const validPdfs = [];
+      for (let i = 0; i < dtFiles.length; i++) {
+        const file = dtFiles[i];
+        if (file.name.toLowerCase().endsWith('.pdf')) {
+          validPdfs.push({
+            filePath: file.path,
+            fileName: file.name,
+            fileSize: file.size
+          });
+        }
+      }
+      if (validPdfs.length > 0) {
+        addMergeFiles(validPdfs);
+      } else {
+        showToast('Vui lòng chỉ chọn các tập tin PDF (*.pdf)', 'alert-circle');
+      }
+    }
+  });
+}
+
+// Start Merge Action
+document.getElementById('btn-start-merge')?.addEventListener('click', async () => {
+  if (mergePdfFilesList.length < 2) {
+    showToast('Vui lòng chọn ít nhất 2 tập tin PDF để ghép', 'alert-circle');
+    return;
+  }
+
+  const mergingCard = document.getElementById('pdf-merging-card');
+  const resultCard = document.getElementById('pdf-merge-result-card');
+  const btnMerge = document.getElementById('btn-start-merge');
+  const statusDetail = document.getElementById('merging-status-text');
+
+  if (mergingCard) mergingCard.style.display = 'flex';
+  if (resultCard) resultCard.style.display = 'none';
+  if (btnMerge) btnMerge.disabled = true;
+
+  if (window.api?.onPdfMergeProgress) {
+    window.api.onPdfMergeProgress((prog) => {
+      if (statusDetail && prog) {
+        statusDetail.textContent = `Đang xử lý ghép file ${prog.current}/${prog.total}: ${prog.fileName}...`;
+      }
+    });
+  }
+
+  try {
+    const filePaths = mergePdfFilesList.map(f => f.filePath);
+    const res = await window.api.mergePdfFiles(filePaths);
+
+    if (mergingCard) mergingCard.style.display = 'none';
+    if (btnMerge) btnMerge.disabled = false;
+
+    if (res && res.success) {
+      lastMergedPdfPath = res.outputPath;
+      if (resultCard) resultCard.style.display = 'flex';
+
+      const pathEl = document.getElementById('result-merged-pdf-path');
+      const summaryEl = document.getElementById('merge-result-summary-text');
+
+      if (pathEl) pathEl.textContent = res.outputPath;
+      if (summaryEl) {
+        summaryEl.textContent = `Đã ghép thành công ${res.fileCount} file (${res.pageCount} trang) • Dung lượng ${formatFileSize(res.fileSize)}`;
+      }
+
+      showToast(t('pdf_merge_result_success') || 'Đã ghép PDF thành công!', 'check-circle-2');
+      refreshIcons();
+    } else if (res && !res.canceled) {
+      showToast(res.error || 'Ghép PDF thất bại', 'alert-circle');
+    }
+  } catch (err) {
+    if (mergingCard) mergingCard.style.display = 'none';
+    if (btnMerge) btnMerge.disabled = false;
+    showToast('Lỗi: ' + (err.message || 'Ghép PDF thất bại'), 'alert-circle');
+  }
+});
+
+// Result Action: Open Merged PDF
+document.getElementById('btn-open-merged-file')?.addEventListener('click', async () => {
+  if (lastMergedPdfPath && window.api?.openFilePath) {
+    await window.api.openFilePath(lastMergedPdfPath);
+  }
+});
+
+// Result Action: Show Merged PDF in folder
+document.getElementById('btn-open-merged-folder')?.addEventListener('click', async () => {
+  if (lastMergedPdfPath && window.api?.showItemInFolder) {
+    await window.api.showItemInFolder(lastMergedPdfPath);
   }
 });

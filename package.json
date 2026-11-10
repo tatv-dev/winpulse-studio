@@ -58,6 +58,7 @@
   },
   "dependencies": {
     "docx": "^9.15.0",
+    "pdf-lib": "^1.17.1",
     "pdf-parse-fork": "^1.2.0",
     "pdf-to-img": "^7.0.1",
     "tesseract.js": "^7.0.0",

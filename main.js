@@ -859,9 +859,10 @@ ipcMain.handle('open-data-folder', async () => {
 
 ipcMain.handle('export-data', (_e, format) => handleExportData(format));
 
-// ─── PDF to Word (DOCX) Converter Engine ──────────────────────────────────────
+// ─── PDF Engine (Word Converter & PDF Merge Tools) ─────────────────────────
 const pdfParse = require('pdf-parse-fork');
 const { Document, Packer, Paragraph, TextRun, HeadingLevel, ImageRun, AlignmentType } = require('docx');
+const { PDFDocument } = require('pdf-lib');
 
 ipcMain.handle('select-pdf-file', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
@@ -884,6 +885,115 @@ ipcMain.handle('select-pdf-file', async () => {
     fileName: path.basename(filePath),
     fileSize: fileStats.size
   };
+});
+
+ipcMain.handle('select-multiple-pdf-files', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Chọn các tập tin PDF cần ghép',
+    properties: ['openFile', 'multiSelections'],
+    filters: [
+      { name: 'Tài liệu PDF (*.pdf)', extensions: ['pdf'] }
+    ]
+  });
+
+  if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+    return { canceled: true, files: [] };
+  }
+
+  // Preserve natural alphabetical ordering for multi-selected files
+  const sortedPaths = [...result.filePaths].sort((a, b) =>
+    path.basename(a).localeCompare(path.basename(b), undefined, { numeric: true, sensitivity: 'base' })
+  );
+
+  const files = sortedPaths.map(fp => {
+    try {
+      const st = fs.statSync(fp);
+      return {
+        filePath: fp,
+        fileName: path.basename(fp),
+        fileSize: st.size
+      };
+    } catch (e) {
+      return {
+        filePath: fp,
+        fileName: path.basename(fp),
+        fileSize: 0
+      };
+    }
+  });
+
+  return { canceled: false, files };
+});
+
+ipcMain.handle('merge-pdf-files', async (_e, filePaths, customOutputPath) => {
+  try {
+    if (!filePaths || !Array.isArray(filePaths) || filePaths.length < 2) {
+      return { success: false, error: 'Cần ít nhất 2 tập tin PDF để ghép.' };
+    }
+
+    for (const fp of filePaths) {
+      if (!fs.existsSync(fp)) {
+        return { success: false, error: `Tập tin không tồn tại: ${path.basename(fp)}` };
+      }
+    }
+
+    let outputPath = customOutputPath;
+    if (!outputPath) {
+      const firstDir = path.dirname(filePaths[0]);
+      const defaultName = `Merged_${Date.now()}.pdf`;
+
+      const saveResult = await dialog.showSaveDialog(mainWindow, {
+        title: 'Lưu tập tin PDF đã ghép',
+        defaultPath: path.join(firstDir, defaultName),
+        filters: [
+          { name: 'Tài liệu PDF (*.pdf)', extensions: ['pdf'] }
+        ]
+      });
+
+      if (saveResult.canceled || !saveResult.filePath) {
+        return { success: false, canceled: true };
+      }
+      outputPath = saveResult.filePath;
+    }
+
+    const mergedPdf = await PDFDocument.create();
+    let totalPagesMerged = 0;
+
+    for (let i = 0; i < filePaths.length; i++) {
+      const fp = filePaths[i];
+      mainWindow?.webContents.send('pdf-merge-progress', {
+        current: i + 1,
+        total: filePaths.length,
+        fileName: path.basename(fp)
+      });
+
+      const pdfBytes = fs.readFileSync(fp);
+      const donorPdf = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+      const copiedPages = await mergedPdf.copyPages(donorPdf, donorPdf.getPageIndices());
+      
+      copiedPages.forEach((page) => {
+        mergedPdf.addPage(page);
+        totalPagesMerged++;
+      });
+    }
+
+    const mergedPdfBytes = await mergedPdf.save();
+    fs.writeFileSync(outputPath, mergedPdfBytes);
+
+    const outStats = fs.statSync(outputPath);
+
+    return {
+      success: true,
+      outputPath,
+      outputName: path.basename(outputPath),
+      fileCount: filePaths.length,
+      pageCount: totalPagesMerged,
+      fileSize: outStats.size
+    };
+  } catch (err) {
+    console.error('Merge PDF error:', err);
+    return { success: false, error: err.message || 'Lỗi không xác định khi ghép PDF.' };
+  }
 });
 
 ipcMain.handle('convert-pdf-to-word', async (_e, inputPath, customOutputPath, options = {}) => {

@@ -8,6 +8,8 @@ const translations = {
     // Navigation
     nav_dashboard: "Dashboard",
     nav_autoclick: "Auto Click",
+    nav_pdf_tools: "Công cụ PDF",
+    nav_pdf_to_word: "Công cụ PDF",
     nav_history: "Lịch sử",
     nav_settings: "Cài đặt",
     app_version_label: "Phiên bản",
@@ -129,8 +131,14 @@ const translations = {
     setting_quit: "Thoát ứng dụng",
     setting_quit_desc: "Dừng và thoát hoàn toàn",
     btn_quit: "Thoát",
-    // PDF Converter
-    nav_pdf_to_word: "PDF sang Word",
+    // PDF Tools
+    nav_pdf_tools: "Công cụ PDF",
+    pdf_tools_title: "Bộ Công Cụ PDF",
+    pdf_tools_subtitle: "Chuyển đổi, ghép file PDF nhanh chóng & bảo mật 100% offline",
+    pdf_subnav_convert: "Chuyển PDF sang Word",
+    pdf_subnav_merge: "Ghép nhiều file PDF",
+
+    // PDF to Word
     pdf_converter_title: "Chuyển Đổi PDF Sang Word",
     pdf_converter_subtitle: "Trích xuất văn bản & chuyển đổi offline an toàn",
     pdf_drop_zone_title: "Kéo thả file PDF vào đây hoặc bấm để duyệt",
@@ -149,6 +157,23 @@ const translations = {
     pdf_note_1: "Quá trình chuyển đổi diễn ra trực tiếp trên máy của bạn, hoàn toàn bảo mật và không tải file lên bất kỳ máy chủ nào.",
     pdf_note_2: "Định dạng hỗ trợ trích xuất văn bản, cấu trúc đoạn và tiêu đề. Với file scan ảnh, Word sẽ nhận văn bản dạng trích xuất nếu có lớp text OCR.",
 
+    // PDF Merge
+    pdf_merge_title: "Ghép Các File PDF Thành 1 File",
+    pdf_merge_subtitle: "Kéo thả sắp xếp thứ tự và nối nhiều tài liệu PDF thành một file duy nhất",
+    pdf_merge_drop_title: "Kéo thả nhiều file PDF vào đây hoặc bấm chọn",
+    pdf_merge_drop_hint: "Hỗ trợ chọn nhiều file cùng lúc • Kéo thả để thay đổi vị trí ghép",
+    pdf_btn_choose_merge: "Chọn Các File PDF",
+    pdf_merge_list_title: "Danh sách file cần ghép:",
+    pdf_merge_add_more: "Thêm file PDF khác",
+    pdf_merge_clear_all: "Xóa danh sách",
+    pdf_btn_start_merge: "Tiến Hành Ghép File PDF",
+    pdf_merging: "Đang tiến hành ghép...",
+    pdf_merge_result_success: "Đã ghép PDF thành công!",
+    pdf_btn_open_merged_file: "Mở File PDF Đã Ghép",
+    pdf_merge_note_title: "Lưu ý khi ghép PDF:",
+    pdf_merge_note_1: "Tất cả các trang của từng file sẽ được ghép liên tiếp theo đúng thứ tự từ trên xuống dưới.",
+    pdf_merge_note_2: "Tốc độ xử lý cực nhanh, bảo toàn nguyên vẹn độ phân giải ảnh, phông chữ và định dạng gốc.",
+
     about_title: "WinPulse Studio",
     about_ver: "Phiên bản 1.4.0",
     about_desc: "Công cụ đo lường & Auto Clicker Windows gọn nhẹ.",
@@ -159,7 +184,8 @@ const translations = {
     // Navigation
     nav_dashboard: "Dashboard",
     nav_autoclick: "Auto Click",
-    nav_pdf_to_word: "PDF to Word",
+    nav_pdf_tools: "PDF Tools",
+    nav_pdf_to_word: "PDF Tools",
     nav_history: "History",
     nav_settings: "Settings",
     app_version_label: "Version",
@@ -242,7 +268,14 @@ const translations = {
     hotkey_saved_success: "Hotkey updated!",
     hotkey_press_key_hint: "Press any key...",
 
-    // PDF Converter
+    // PDF Tools
+    nav_pdf_tools: "PDF Tools",
+    pdf_tools_title: "PDF Tools Suite",
+    pdf_tools_subtitle: "Fast, 100% offline & secure PDF conversion and merging",
+    pdf_subnav_convert: "PDF to Word",
+    pdf_subnav_merge: "Merge PDF Files",
+
+    // PDF to Word
     pdf_converter_title: "Convert PDF to Word",
     pdf_converter_subtitle: "Extract text & convert 100% offline securely",
     pdf_drop_zone_title: "Drag & drop your PDF file here, or click to browse",
@@ -260,6 +293,23 @@ const translations = {
     pdf_note_title: "Conversion Notes:",
     pdf_note_1: "Processing runs entirely on your local machine. No files or data are uploaded anywhere.",
     pdf_note_2: "Retains text, headings, and paragraph spacing. Scanned image-only PDFs require searchable text layer.",
+
+    // PDF Merge
+    pdf_merge_title: "Merge Multiple PDF Files",
+    pdf_merge_subtitle: "Reorder and combine multiple PDF documents into a single file",
+    pdf_merge_drop_title: "Drag & drop multiple PDF files here, or click to select",
+    pdf_merge_drop_hint: "Supports selecting multiple files • Reorder files to your desired sequence",
+    pdf_btn_choose_merge: "Choose PDF Files",
+    pdf_merge_list_title: "Files to merge:",
+    pdf_merge_add_more: "Add More PDFs",
+    pdf_merge_clear_all: "Clear List",
+    pdf_btn_start_merge: "Merge PDF Files Now",
+    pdf_merging: "Merging files...",
+    pdf_merge_result_success: "Merged successfully!",
+    pdf_btn_open_merged_file: "Open Merged PDF",
+    pdf_merge_note_title: "Merge Notes:",
+    pdf_merge_note_1: "All pages from each file will be merged in top-to-bottom sequence.",
+    pdf_merge_note_2: "Lightning fast processing with zero loss of vector clarity, images, and formatting.",
 
     // History page
     history_title: "History Log",
